@@ -1,0 +1,473 @@
+// ============================================
+// MAIN STYLESHEET
+// ============================================
+
+@import "variables";
+@import "bootstrap/scss/bootstrap";
+
+// --- Google Fonts ---
+// (đặt link trong index.html để tránh chặn render; import ở đây chỉ để rõ ràng)
+
+// --- Signature element v2: Trust bar (thay cho ticker) được style trực tiếp trong TopBar/TrustBar components ---
+
+// --- Nút cuộn lên đầu trang: hình viên thuốc, màu xanh chủ đạo ---
+.scroll-top-btn {
+  position: fixed;
+  right: 24px;
+  bottom: 160px;
+  width: 52px;
+  height: 76px;
+  border-radius: 999px;
+  background: $signal;
+  color: #fff;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(47, 143, 118, .35);
+  cursor: pointer;
+  z-index: 1000;
+  transition: background .18s ease, transform .18s ease;
+
+  &:hover {
+    background: $signal-dark;
+    transform: translateY(-2px);
+  }
+}
+
+@media (max-width: 576px) {
+  .scroll-top-btn {
+    width: 44px;
+    height: 60px;
+    right: 16px;
+    bottom: 140px;
+  }
+}
+
+// --- Dải logo đối tác chạy ngang liên tục (marquee), lặp mượt vô hạn, mờ dần 2 mép ---
+.brand-marquee {
+  width: 100%;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 8%, #000 92%, transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0%, #000 8%, #000 92%, transparent 100%);
+
+  &__track {
+    display: flex;
+    width: max-content;
+    gap: 4rem;
+    animation: brand-scroll 18s linear infinite;
+    will-change: transform;
+  }
+
+  &__logo {
+    height: 34px;
+    width: auto;
+    object-fit: contain;
+    flex-shrink: 0;
+  }
+}
+
+@keyframes brand-scroll {
+  from { transform: translateX(-50%); }
+  to   { transform: translateX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-marquee__track { animation: none; }
+}
+
+// --- Widget liên hệ nhanh nổi góc màn hình: pill Zalo + gọi điện, có hiệu ứng sóng lan tỏa ---
+.floating-contact {
+  position: fixed;
+  right: 20px;
+  bottom: 24px;
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.contact-pill {
+  display: flex;
+  align-items: center;
+  height: 52px;
+  border-radius: 999px;
+  padding-left: 20px;
+  padding-right: 3px;
+  color: #fff;
+  font-weight: 700;
+  font-size: .95rem;
+  text-decoration: none;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .22);
+  gap: 12px;
+  transition: transform .18s ease;
+  white-space: nowrap;
+
+  &:hover { transform: translateY(-2px); color: #fff; }
+
+  &--zalo { background: linear-gradient(135deg, #4FA8F5, #0068FF); }
+  &--call { background: linear-gradient(135deg, $signal, $signal-dark); }
+
+  &__icon {
+    position: relative;
+    width: 46px;
+    height: 46px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+.pulse-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  animation: pulse-ring 2s ease-out infinite;
+}
+
+@keyframes pulse-ring {
+  0%   { transform: scale(.9); opacity: .7; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse-ring { animation: none; }
+}
+
+@media (max-width: 576px) {
+  .floating-contact { right: 12px; bottom: 84px; gap: 10px; }
+  .contact-pill { height: 44px; font-size: .82rem; padding-left: 14px; }
+  .contact-pill__icon { width: 38px; height: 38px; }
+}
+
+// --- Icon mạng xã hội: icon trần, không khung; hover có nền tròn mờ nhẹ để rõ là bấm được ---
+.social-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(251, 251, 248, .8);
+  transition: color .18s ease, background .18s ease, transform .18s ease;
+
+  &:hover {
+    color: $signal;
+    background: rgba(251, 251, 248, .08);
+    transform: translateY(-2px);
+  }
+}
+
+
+// --- Utility text styles ---
+.mono {
+  font-family: $font-family-monospace;
+}
+
+.text-signal { color: $signal; }
+.bg-ink { background-color: $ink; }
+.bg-paper-alt { background-color: $paper-alt; }
+
+// --- Top utility bar: hotline / giờ làm việc / email ---
+.top-bar {
+  background: $ink;
+  color: rgba($paper, .8);
+  font-size: .8125rem;
+
+  a { color: rgba($paper, .8); text-decoration: none; &:hover { color: $paper; } }
+}
+
+// --- CTA buttons ---
+.btn-signal-solid {
+  background: $signal;
+  color: $paper;
+  border: none;
+  font-weight: 500;
+  padding: .6rem 1.35rem;
+  border-radius: $border-radius;
+  transition: background .18s ease, transform .18s ease;
+
+  &:hover { background: $signal-dark; color: $paper; transform: translateY(-1px); }
+}
+
+.btn-accent-solid {
+  background: $accent;
+  color: #fff;
+  border: none;
+  font-weight: 500;
+  padding: .6rem 1.35rem;
+  border-radius: $border-radius;
+  transition: background .18s ease, transform .18s ease;
+
+  &:hover { background: $accent-dark; color: #fff; transform: translateY(-1px); }
+}
+
+// --- Trust bar: 3 lý do tin tưởng, kiểu icon + text (gần gũi, không phải số liệu giả) ---
+.trust-item {
+  display: flex;
+  align-items: center;
+  gap: .9rem;
+
+  &__icon {
+    width: 46px;
+    height: 46px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: rgba($signal, .1);
+    color: $signal-dark;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+  }
+
+  &__title { font-weight: 600; color: $ink; font-size: .95rem; margin-bottom: .1rem; }
+  &__desc { color: $slate; font-size: .82rem; }
+}
+
+// --- Support/staff card ---
+.support-card {
+  background: #fff;
+  border: 1px solid $line;
+  border-radius: $border-radius-lg;
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: $box-shadow-sm;
+}
+
+// --- Floating product card (tham khảo E-Tech: card nổi, đổ bóng mềm) ---
+.float-card {
+  background: #fff;
+  border-radius: $border-radius-lg;
+  box-shadow: 0 16px 40px rgba(36, 51, 59, .12);
+  padding: .75rem;
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  width: 260px;
+
+  &__thumb {
+    width: 56px;
+    height: 56px;
+    border-radius: .6rem;
+    flex-shrink: 0;
+  }
+
+  &__name {
+    font-size: .8rem;
+    font-weight: 500;
+    color: $ink;
+    line-height: 1.3;
+    margin-bottom: .2rem;
+  }
+
+  &__meta {
+    font-size: .72rem;
+    color: $slate;
+  }
+}
+
+// --- Category block: nền mint đậm hơn, viền rõ ràng, chữ chắc tay hơn ---
+.cat-block {
+  border-radius: 14px;
+  padding: 1.5rem 1.25rem;
+  text-decoration: none;
+  color: #fff;
+  display: block;
+  height: 100%;
+  background: linear-gradient(135deg, #2F8F76 0%, #22684F 100%);
+  border: 1.5px solid rgba(255, 255, 255, .3);
+  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, .25);
+    border-color: rgba(255, 255, 255, .6);
+    color: #fff;
+  }
+
+  &--active {
+    border-color: #fff;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, .2);
+  }
+
+  &__label {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 1.08rem;
+    color: #fff;
+    margin-bottom: .25rem;
+    line-height: 1.3;
+    min-height: 2.6rem;
+    display: flex;
+    align-items: center;
+  }
+  &__count {
+    font-size: .78rem;
+    color: rgba(255, 255, 255, .7);
+    font-weight: 500;
+  }
+}
+
+// --- Form controls: focus theo màu xanh chủ đạo thay vì xanh dương mặc định ---
+.form-control {
+  border-color: $line;
+  padding: .6rem .85rem;
+  &:focus {
+    border-color: $signal;
+    box-shadow: 0 0 0 .2rem rgba($signal, .12);
+  }
+}
+
+// --- Product card hover ---
+.product-card {
+  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 14px 30px rgba(47, 143, 118, .14) !important;
+    border-color: rgba(47, 143, 118, .4) !important;
+  }
+}
+
+// --- Scroll-reveal (AOS tinh chỉnh nhẹ, không giật) ---
+[data-aos] {
+  transition-property: opacity, transform;
+}
+
+// --- Thanh tìm kiếm: icon lúc thu gọn, mở rộng thành ô nhập, đồng bộ tông xanh chủ đạo ---
+.search-box {
+  &__inner {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    width: 40px;
+    height: 40px;
+    padding: 0 .6rem;
+    border-radius: 999px;
+    border: 1px solid $line;
+    background: $paper-alt;
+    transition: width .25s ease, background .2s ease, border-color .2s ease;
+    overflow: hidden;
+
+    &--open {
+      width: 240px;
+      background: #fff;
+      border-color: $signal;
+      box-shadow: 0 0 0 .15rem rgba($signal, .12);
+    }
+  }
+
+  &__icon {
+    color: $slate;
+    cursor: pointer;
+    transition: color .2s ease;
+  }
+
+  &__inner--open &__icon { color: $signal; cursor: default; }
+
+  &__input {
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: .875rem;
+    width: 100%;
+    color: $ink;
+    min-width: 0;
+
+    &::placeholder { color: $slate-light; }
+  }
+
+  &__close {
+    border: none;
+    background: transparent;
+    color: $slate;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    padding: 0;
+
+    &:hover { color: $ink; }
+  }
+}
+
+@media (max-width: 991px) {
+  .search-box__inner,
+  .search-box__inner--open {
+    width: 100%;
+  }
+}
+
+
+// --- Nav link ---
+.navbar .nav-link {
+  color: $ink;
+  font-weight: 500;
+  transition: color .15s ease;
+
+  &:hover { color: $signal; }
+}
+
+.text-ink { color: $ink; }
+
+// Headings mặc định luôn tối màu ($headings-color) — trong section nền tối
+// (.bg-ink, .text-white...) phải cho heading kế thừa màu trắng, nếu không
+// tiêu đề sẽ "biến mất" trên nền tối.
+.bg-ink,
+.text-white {
+  h1, h2, h3, h4, h5, h6 {
+    color: inherit;
+  }
+}
+
+// --- Product spec chip (dùng mono, gợi nhãn thiết bị đo) ---
+.spec-chip {
+  display: inline-flex;
+  align-items: center;
+  font-family: $font-family-monospace;
+  font-size: .7rem;
+  letter-spacing: .02em;
+  color: $signal-dark;
+  background: rgba($signal, .08);
+  border: 1px solid rgba($signal, .18);
+  border-radius: 4px;
+  padding: .15rem .5rem;
+}
+
+// --- Hiệu ứng mờ dần + trượt nhẹ khi vào trang Đăng nhập Admin ---
+@keyframes adminFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.admin-fade-in {
+  animation: adminFadeIn .5s ease;
+}
+
+// --- Hiệu ứng mờ dần + trượt nhẹ khi chuyển mục trong Admin (nhanh hơn trang Đăng nhập 1 chút) ---
+@keyframes adminPageFade {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.admin-page-fade {
+  animation: adminPageFade .35s ease;
+}

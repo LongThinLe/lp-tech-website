@@ -1,0 +1,48 @@
+// ============================================
+// DESIGN TOKENS — LabTech Distributor
+// ============================================
+
+// --- Color palette (v3 — chủ đạo xanh lá, bớt màu cạnh tranh nhau) ---
+$ink:        #223028; // than chì ánh xanh — text chính, đồng bộ với tông xanh lá
+$paper:      #FBFBF8; // nền chính, trắng gần như tinh khiết
+$paper-alt:  #E4F1EA; // nền phụ — xanh lá rất nhạt (thay cho be/tan trước đây)
+$signal:     #2F8F76; // xanh lá chủ đạo
+$signal-dark:#22684F;
+$signal-light:#E4F1EA; // tint nhạt của xanh chủ đạo — dùng thay cho 4 màu pastel rời rạc
+$accent:     #E1483D; // đỏ gạch ấm — CHỈ dùng cho 1 nút CTA chính, không lan ra chỗ khác
+$accent-dark:#B93A31;
+$slate:      #5B6B76; // text phụ
+$slate-light:#96A0A8;
+$amber:      #E8A33D; // dự trữ, hiếm khi dùng
+$line:       #E1E9E3; // border/divider nhẹ, ánh xanh
+
+// Đã bỏ bộ pastel 4 màu (sand/mint/sky/rose) — thay bằng 1 họ màu xanh duy nhất
+// với độ đậm nhạt khác nhau, để nhất quán và bớt rối mắt.
+
+// --- Bootstrap variable overrides (phải khai báo TRƯỚC khi import bootstrap) ---
+$primary:       $signal;
+$secondary:     $ink;
+$light:         $paper;
+$dark:          $ink;
+$warning:       $amber;
+
+$body-bg:       $paper;
+$body-color:    $ink;
+
+$border-radius:       .375rem;
+$border-radius-sm:    .25rem;
+$border-radius-lg:    .5rem;
+
+$font-family-sans-serif: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+$font-family-monospace:  "IBM Plex Mono", SFMono-Regular, Menlo, monospace;
+
+$headings-font-family: "Space Grotesk", $font-family-sans-serif;
+$headings-font-weight: 600;
+$headings-color:       $ink;
+
+$link-color: $signal;
+$link-hover-color: $signal-dark;
+
+$box-shadow-sm: 0 1px 3px rgba(18, 33, 46, 0.06);
+$box-shadow:    0 4px 16px rgba(18, 33, 46, 0.08);
+$box-shadow-lg: 0 12px 32px rgba(18, 33, 46, 0.12);
