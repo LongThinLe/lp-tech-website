@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { FiArrowRight, FiHeadphones, FiUsers, FiTruck, FiShoppingBag, FiSend, FiCheckCircle, FiPhoneCall, FiEdit3 } from "react-icons/fi";
-import { SiZalo } from "react-icons/si";
+import { FiArrowRight, FiHeadphones, FiUsers, FiTruck } from "react-icons/fi";
 import { categoryGroups } from "../data/mockData";
 
 const heroImages = [
