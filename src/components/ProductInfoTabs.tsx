@@ -5,6 +5,8 @@ interface TabSection {
   content: React.ReactNode;
 }
 
+const MAX_CONTENT_HEIGHT = 420; // chiều cao tối đa (px) — dài hơn sẽ tự cuộn bên trong
+
 export default function ProductInfoTabs({ tabs }: { tabs: TabSection[] }) {
   const [active, setActive] = useState(0);
   const [height, setHeight] = useState<number>();
@@ -17,6 +19,8 @@ export default function ProductInfoTabs({ tabs }: { tabs: TabSection[] }) {
       setHeight(contentRef.current.scrollHeight);
     }
   }, [active, tabs]);
+
+  const displayHeight = height !== undefined ? Math.min(height, MAX_CONTENT_HEIGHT) : height;
 
   return (
     <div className="rounded-4 overflow-hidden mt-3" style={{ boxShadow: "0 4px 16px rgba(0,0,0,.06)" }}>
@@ -41,7 +45,14 @@ export default function ProductInfoTabs({ tabs }: { tabs: TabSection[] }) {
           </button>
         ))}
       </div>
-      <div style={{ height, overflow: "hidden", transition: "height .3s ease", background: "#fff" }}>
+      <div
+        style={{
+          height: displayHeight,
+          overflowY: "auto",
+          transition: "height .3s ease",
+          background: "#fff",
+        }}
+      >
         <div ref={contentRef} className="px-4 py-3" style={{ fontSize: ".85rem", color: "#5B6B76", lineHeight: 1.6 }}>
           {tabs[active].content}
         </div>
