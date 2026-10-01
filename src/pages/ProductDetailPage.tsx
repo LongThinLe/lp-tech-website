@@ -157,14 +157,7 @@ export default function ProductDetailPage() {
               ))}
             </div>
 
-            <ul className="list-unstyled d-flex flex-column gap-2 mb-4">
-              {p.specs.map((s) => (
-                <li key={s} className="d-flex align-items-start gap-2" style={{ fontSize: ".95rem", color: "#3D4A44" }}>
-                  <FiCheck className="text-signal flex-shrink-0 mt-1" />
-                  {s}
-                </li>
-              ))}
-            </ul>
+
 
             <div className="d-flex gap-3 mb-4 align-items-center">
               <Link to="/lien-he" className="btn btn-accent-solid d-inline-flex align-items-center gap-2">
