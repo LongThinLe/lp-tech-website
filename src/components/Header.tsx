@@ -53,7 +53,7 @@ export default function Header() {
     setHoveredCat(null);
   };
 
-  // Đo chiều cao thật của nội dung menu 2 (thương hiệu), để chuyển động mượt khi đổi danh mục —
+  // Đo chiều cao thật của nội dung menu 2 (danh mục con), để chuyển động mượt khi đổi nhóm —
   // đúng kỹ thuật đã dùng cho tab "Thông số kỹ thuật" ở trang Chi tiết sản phẩm
   const panel2ContentRef = useRef<HTMLDivElement>(null);
   const [panel2Height, setPanel2Height] = useState(0);
@@ -118,21 +118,19 @@ export default function Header() {
                       className="bg-white rounded-3 p-2"
                       style={{ minWidth: 230, border: "1px solid #E1E9E3", boxShadow: "0 16px 40px rgba(0,0,0,.12)" }}
                     >
-                      {allCategories.map((cat) => (
+                      {categoryGroups.map((group) => (
                         <div
-                          key={cat.id}
-                          onMouseEnter={() => setHoveredCat(cat.id)}
+                          key={group.id}
+                          onMouseEnter={() => setHoveredCat(group.id)}
                           className="d-flex align-items-center justify-content-between px-3 py-2 rounded-2"
                           style={{
                             cursor: "pointer", fontSize: ".88rem",
-                            background: hoveredCat === cat.id ? "#E4F1EA" : "transparent",
-                            color: hoveredCat === cat.id ? "#22684F" : "#223028",
-                            fontWeight: hoveredCat === cat.id ? 600 : 400,
+                            background: hoveredCat === group.id ? "#E4F1EA" : "transparent",
+                            color: hoveredCat === group.id ? "#22684F" : "#223028",
+                            fontWeight: hoveredCat === group.id ? 600 : 400,
                           }}
                         >
-                          <Link to={`/san-pham?cat=${cat.id}`} className="text-decoration-none flex-grow-1" style={{ color: "inherit" }} onClick={closeMenu}>
-                            {cat.name}
-                          </Link>
+                          <span className="flex-grow-1">{group.name}</span>
                           <FiChevronRight size={13} style={{ color: "#96A0A8", flexShrink: 0 }} />
                         </div>
                       ))}
@@ -156,32 +154,17 @@ export default function Header() {
                         }}
                       >
                         <div ref={panel2ContentRef} className="p-2">
-                          {brandsForCategory[hoveredCat]?.length > 0 ? (
-                            brandsForCategory[hoveredCat].map((b) => (
-                              <Link
-                                key={b.id}
-                                to={`/san-pham?cat=${hoveredCat}&brand=${b.id}`}
-                                onClick={closeMenu}
-                                className="d-block px-3 py-2 rounded-2 text-decoration-none"
-                                style={{ fontSize: ".88rem", color: "#223028" }}
-                              >
-                                {b.name}
-                              </Link>
-                            ))
-                          ) : (
-                            <div className="px-3 py-2" style={{ fontSize: ".82rem", color: "#96A0A8" }}>
-                              Chưa có hãng cụ thể
-                            </div>
-                          )}
-                          <div style={{ height: 1, background: "#E1E9E3", margin: "6px 8px" }} />
-                          <Link
-                            to={`/san-pham?cat=${hoveredCat}`}
-                            onClick={closeMenu}
-                            className="d-block px-3 py-2 rounded-2 text-decoration-none fst-italic"
-                            style={{ fontSize: ".85rem", color: "#5B6B76" }}
-                          >
-                            Thương hiệu khác
-                          </Link>
+                          {categoryGroups.find((g) => g.id === hoveredCat)?.items.map((item) => (
+                            <Link
+                              key={item.id}
+                              to={`/san-pham?cat=${item.id}`}
+                              onClick={closeMenu}
+                              className="d-block px-3 py-2 rounded-2 text-decoration-none"
+                              style={{ fontSize: ".88rem", color: "#223028" }}
+                            >
+                              {item.name}
+                            </Link>
+                          ))}
                         </div>
                       </div>
                     )}
