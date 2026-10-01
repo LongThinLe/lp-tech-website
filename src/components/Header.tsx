@@ -1,14 +1,9 @@
-import { useState, useMemo, useRef, useLayoutEffect, useEffect } from "react";
+import { useState, useRef, useLayoutEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { FiPhone, FiClock, FiMail, FiX, FiChevronRight } from "react-icons/fi";
 import { PiMagnifyingGlassBold } from "react-icons/pi";
 import { categoryGroups } from "../data/mockData";
-import { getProducts } from "../services/productService";
-import { getBrands } from "../services/brandService";
-import type { Brand } from "../services/brandService";
-
-const allCategories = categoryGroups.flatMap((g) => g.items);
 
 export default function Header() {
   const [searchOpen, setSearchOpen] = useState(false);
@@ -17,36 +12,12 @@ export default function Header() {
   const [hoveredCat, setHoveredCat] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  // Lấy dữ liệu sản phẩm + hãng phân phối THẬT từ Firebase — dùng để tính đúng
-  // hãng nào thật sự có sản phẩm trong từng danh mục (cho menu lồng "Sản phẩm")
-  const [products, setProducts] = useState<any[]>([]);
-  const [brands, setBrands] = useState<Brand[]>([]);
-  useEffect(() => {
-    getProducts()
-      .then((data) => setProducts(data))
-      .catch((err) => console.error("Lỗi tải sản phẩm từ Firebase:", err));
-    getBrands()
-      .then((data) => setBrands(data))
-      .catch((err) => console.error("Lỗi tải hãng phân phối từ Firebase:", err));
-  }, []);
-
   const submitSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) return;
     navigate(`/san-pham?q=${encodeURIComponent(query.trim())}`);
     setSearchOpen(false);
   };
-
-  const brandsForCategory = useMemo(() => {
-    const map: Record<string, Brand[]> = {};
-    allCategories.forEach((cat) => {
-      const brandIdsInCat = new Set(
-        products.filter((p) => p.categoryId === cat.id).map((p) => p.brandId)
-      );
-      map[cat.id] = brands.filter((b) => brandIdsInCat.has(b.id));
-    });
-    return map;
-  }, [products, brands]);
 
   const closeMenu = () => {
     setMenuOpen(false);
