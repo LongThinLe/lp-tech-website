@@ -53,7 +53,7 @@ export default function ProductInfoTabs({ tabs }: { tabs: TabSection[] }) {
           background: "#fff",
         }}
       >
-        <div ref={contentRef} className="px-4 py-3" style={{ fontSize: ".85rem", color: "#5B6B76", lineHeight: 1.6 }}>
+        <div ref={contentRef} className="px-4 py-3" style={{ fontSize: ".85rem", color: "#5B6B76", lineHeight: 1.6, whiteSpace: "pre-line" }}>
           {tabs[active].content}
         </div>
       </div>
