@@ -1,29 +1,142 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { FiFileText, FiArrowLeft } from "react-icons/fi";
+import {
+  getNews,
+  formatNewsDate,
+  newsCover,
+  newsExcerpt,
+  type NewsPost,
+} from "../services/newsService";
 
 export default function NewsPage() {
+  const [posts, setPosts] = useState<NewsPost[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getNews()
+      .then((l) => setPosts(l.filter((p) => !p.hidden)))
+      .catch(() => setPosts([]))
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
-    <section className="py-5 bg-white d-flex align-items-center justify-content-center" style={{ minHeight: "60vh" }}>
-      <div className="container text-center" style={{ maxWidth: 480 }}>
-        <div
-          className="d-flex align-items-center justify-content-center mx-auto mb-4 rounded-circle"
-          style={{ width: 72, height: 72, background: "#E4F1EA", color: "#22684F" }}
+    <div style={{ background: "#F7FAF8", minHeight: "60vh" }}>
+      <div className="container py-5">
+        <div style={{ fontSize: 13, color: "#96A0A8", marginBottom: 12 }}>
+          <Link to="/" style={{ color: "#96A0A8", textDecoration: "none" }}>
+            Trang chủ
+          </Link>{" "}
+          › Tin tức
+        </div>
+        <h1
+          style={{
+            fontFamily: "'Space Grotesk', sans-serif",
+            fontSize: 34,
+            color: "#223028",
+            marginBottom: 6,
+          }}
         >
-          <FiFileText size={30} />
-        </div>
-        <h1 className="h3 fw-semibold mb-3" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-          Trang Tin tức đang được hoàn thiện
+          Tin tức
         </h1>
-        <p className="mb-4" style={{ color: "#5B6B76" }}>
-          LP Tech sẽ sớm cập nhật tin tức ngành, thông báo sản phẩm mới và các bài viết hữu ích tại đây.
+        <p style={{ color: "#5B6B76", marginBottom: 28 }}>
+          Cập nhật mới nhất từ LP Tech
         </p>
-        <div className="d-flex gap-3 justify-content-center">
-          <Link to="/san-pham" className="btn btn-accent-solid">Xem sản phẩm</Link>
-          <Link to="/" className="btn btn-outline-secondary d-inline-flex align-items-center gap-2">
-            <FiArrowLeft /> Về trang chủ
-          </Link>
-        </div>
+
+        {loading ? (
+          <p style={{ color: "#5B6B76" }}>Đang tải...</p>
+        ) : posts.length === 0 ? (
+          <p style={{ color: "#5B6B76" }}>Chưa có bài viết nào.</p>
+        ) : (
+          <div className="row g-4">
+            {posts.map((p) => {
+              const cover = newsCover(p);
+              return (
+                <div key={p.id} className="col-12 col-sm-6 col-lg-4">
+                  <Link
+                    to={`/tin-tuc/${p.slug || p.id}`}
+                    style={{ textDecoration: "none", color: "inherit" }}
+                  >
+                    <div
+                      style={{
+                        background: "#fff",
+                        border: "1px solid #E1E9E3",
+                        borderRadius: 14,
+                        overflow: "hidden",
+                        height: "100%",
+                      }}
+                    >
+                      <div
+                        style={{
+                          aspectRatio: "16 / 10",
+                          background: "#E4F1EA",
+                        }}
+                      >
+                        {cover && (
+                          <img
+                            src={cover}
+                            alt={p.title}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                              display: "block",
+                            }}
+                          />
+                        )}
+                      </div>
+                      <div style={{ padding: "16px 18px 18px" }}>
+                        <div
+                          style={{
+                            fontSize: 12,
+                            color: "#96A0A8",
+                            marginBottom: 6,
+                          }}
+                        >
+                          {formatNewsDate(p.publishedAt)}
+                        </div>
+                        <h3
+                          style={{
+                            fontFamily: "'Space Grotesk', sans-serif",
+                            fontSize: 17,
+                            lineHeight: 1.35,
+                            color: "#223028",
+                            marginBottom: 8,
+                          }}
+                        >
+                          {p.title}
+                        </h3>
+                        <p
+                          style={{
+                            fontSize: 14,
+                            color: "#5B6B76",
+                            lineHeight: 1.55,
+                            marginBottom: 12,
+                            display: "-webkit-box",
+                            WebkitLineClamp: 3,
+                            WebkitBoxOrient: "vertical",
+                            overflow: "hidden",
+                          }}
+                        >
+                          {newsExcerpt(p)}
+                        </p>
+                        <span
+                          style={{
+                            color: "#2F8F76",
+                            fontWeight: 600,
+                            fontSize: 14,
+                          }}
+                        >
+                          Xem thêm →
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
-    </section>
+    </div>
   );
 }
