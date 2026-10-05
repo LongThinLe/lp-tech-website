@@ -53,7 +53,7 @@ export default function FeaturedProducts() {
             return (
               <Link
                 key={p.id}
-                to={`/san-pham/${p.id}`}
+                to={`/san-pham/${p.slug || p.id}`}
                 className="bg-white rounded-4 p-3 product-card d-block text-decoration-none flex-shrink-0"
                 style={{ color: "inherit", border: "1.5px solid #E1E9E3", width: 220, scrollSnapAlign: "start" }}
                 data-aos="fade-up"

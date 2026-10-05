@@ -1,5 +1,6 @@
 export interface Product {
   id: string;
+  slug?: string;            // phần tên trong link, vd: mang-co-pe-cuon-cong-nghiep
   name: string;
   brandId: string;
   categoryId: string;

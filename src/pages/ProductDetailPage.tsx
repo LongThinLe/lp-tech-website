@@ -38,8 +38,11 @@ export default function ProductDetailPage() {
     );
   }
 
-  const p = products.find((prod) => prod.id === id);
+  // Tìm theo tên trong link (slug); không thấy thì thử theo mã cũ để link cũ vẫn mở được
+  const p = products.find((prod) => prod.slug === id) ?? products.find((prod) => prod.id === id);
   if (!p) return <Navigate to="/san-pham" replace />;
+  // Link cũ dạng mã ngẫu nhiên: tự chuyển sang link theo tên
+  if (p.slug && id !== p.slug) return <Navigate to={`/san-pham/${p.slug}`} replace />;
 
   const brand = brands.find((b) => b.id === p.brandId);
   // "Liên quan" đúng nghĩa — ưu tiên cùng danh mục trước, thiếu thì bù bằng cùng hãng,
@@ -48,8 +51,8 @@ export default function ProductDetailPage() {
   // Chỉ so sánh hãng khi sản phẩm này CÓ hãng (brandId rỗng = không có hãng)
   const sameBrandOnly = p.brandId
     ? products.filter(
-        (prod) => prod.id !== p.id && prod.brandId === p.brandId && prod.categoryId !== p.categoryId
-      )
+      (prod) => prod.id !== p.id && prod.brandId === p.brandId && prod.categoryId !== p.categoryId
+    )
     : [];
   const others = products.filter(
     (prod) =>
@@ -275,7 +278,7 @@ export default function ProductDetailPage() {
                 return (
                   <div className="col-6 col-lg-3" key={rp.id} data-aos="fade-up" data-aos-delay={idx * 80}>
                     <Link
-                      to={`/san-pham/${rp.id}`}
+                      to={`/san-pham/${rp.slug || rp.id}`}
                       className="bg-white rounded-4 p-3 h-100 product-card d-block text-decoration-none"
                       style={{ color: "inherit", border: "1.5px solid #E1E9E3" }}
                     >

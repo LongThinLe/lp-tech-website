@@ -167,7 +167,7 @@ export default function ProductsPage() {
                   return (
                     <div className="col-6 col-md-4" key={p.id} data-aos="fade-up" data-aos-delay={(idx % 4) * 80}>
                       <Link
-                        to={`/san-pham/${p.id}`}
+                        to={`/san-pham/${p.slug || p.id}`}
                         className="bg-white rounded-4 p-3 h-100 product-card d-block text-decoration-none"
                         style={{ color: "inherit", border: "1.5px solid #E1E9E3" }}
                       >

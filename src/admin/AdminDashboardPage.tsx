@@ -5,11 +5,12 @@ import type { Brand } from "../services/brandService";
 import { addProduct, getProducts, updateProduct, deleteProduct } from "../services/productService";
 import { getLeads } from "../services/leadService";
 import { uploadProductImage } from "../services/storageService";
+import { toSlug, uniqueSlug } from "../utils/slug";
 import type { Product } from "../types";
 import {
   FiTag, FiLayers, FiBriefcase, FiMessageSquare,
   FiPlus, FiEdit2, FiTrash2, FiX, FiSearch, FiChevronDown, FiCheckCircle,
-  FiUploadCloud, FiImage, FiEdit3,
+  FiUploadCloud, FiImage, FiEdit3, FiLink,
 } from "react-icons/fi";
 
 const allCategories = categoryGroups.flatMap((g) => g.items);
@@ -27,6 +28,7 @@ export default function AdminDashboardPage() {
   const [specsText, setSpecsText] = useState("");
   // Số ảnh đang được tải lên (để hiện vòng xoay và khóa nút Lưu)
   const [uploadingCount, setUploadingCount] = useState(0);
+  const [backfilling, setBackfilling] = useState(false);
 
   // Lấy dữ liệu sản phẩm THẬT từ Firebase ngay khi trang vừa tải
   useEffect(() => {
@@ -86,6 +88,9 @@ export default function AdminDashboardPage() {
     return result;
   }, [items, search, sortAsc]);
 
+  // Số sản phẩm cũ chưa có đường dẫn theo tên
+  const missingSlugCount = items.filter((p) => !p.slug).length;
+
   // Gộp ảnh chính + ảnh phụ thành 1 danh sách duy nhất (ảnh đầu tiên = ảnh chính)
   const allImages: string[] = editing
     ? ([editing.image, ...(editing.images ?? [])].filter(Boolean) as string[])
@@ -100,6 +105,7 @@ export default function AdminDashboardPage() {
     setEditing({
       id: `p${Date.now()}`,
       name: "",
+      slug: "",
       image: "",
       images: [],
       categoryId: allCategories[0]?.id ?? "",
@@ -118,6 +124,7 @@ export default function AdminDashboardPage() {
       usageGuide: "",
       certification: "",
       ...p,
+      slug: p.slug ?? "",
       images: (p.images ?? []).filter(Boolean),
     });
     setSpecsText((p.specs ?? []).join("\n"));
@@ -176,9 +183,17 @@ export default function AdminDashboardPage() {
   const save = async () => {
     if (!editing) return;
 
+    // Đường dẫn theo tên: admin tự gõ thì dùng, để trống thì tự tạo từ tên; trùng thì thêm -2, -3...
+    const takenSlugs = items
+      .filter((p) => p.id !== editing.id)
+      .map((p) => p.slug)
+      .filter(Boolean) as string[];
+    const slug = uniqueSlug(toSlug((editing.slug ?? "").trim() || editing.name), takenSlugs);
+
     // Chuyển ô "Thông số kỹ thuật" (nhiều dòng) thành mảng, mỗi dòng 1 phần tử
     const finalEditing: Product = {
       ...editing,
+      slug,
       specs: specsText.split("\n").map((s) => s.trim()).filter(Boolean),
     };
 
@@ -201,6 +216,29 @@ export default function AdminDashboardPage() {
     } catch (err) {
       console.error("Lỗi khi lưu sản phẩm:", err);
       setToast({ message: "Có lỗi khi lưu — kiểm tra lại kết nối Firebase." });
+    }
+  };
+
+  // Tạo đường dẫn theo tên cho TẤT CẢ sản phẩm cũ chưa có — bấm 1 lần là xong
+  const backfillSlugs = async () => {
+    setBackfilling(true);
+    const taken = items.map((p) => p.slug).filter(Boolean) as string[];
+    const created: Record<string, string> = {};
+    for (const p of items) {
+      if (p.slug) continue;
+      const s = uniqueSlug(toSlug(p.name), taken);
+      taken.push(s);
+      created[p.id] = s;
+    }
+    try {
+      await Promise.all(Object.entries(created).map(([id, s]) => updateProduct(id, { slug: s })));
+      setItems((prev) => prev.map((p) => (created[p.id] ? { ...p, slug: created[p.id] } : p)));
+      setToast({ message: `Đã tạo link theo tên cho ${Object.keys(created).length} sản phẩm.` });
+    } catch (err) {
+      console.error("Lỗi khi tạo đường dẫn cho sản phẩm cũ:", err);
+      setToast({ message: "Có lỗi khi tạo link — thử lại nhé." });
+    } finally {
+      setBackfilling(false);
     }
   };
 
@@ -290,6 +328,27 @@ export default function AdminDashboardPage() {
           <FiPlus /> Thêm sản phẩm
         </button>
       </div>
+
+      {/* Nhắc tạo link theo tên cho sản phẩm cũ — chỉ hiện khi còn sản phẩm chưa có */}
+      {!loading && missingSlugCount > 0 && (
+        <div
+          className="d-flex flex-wrap align-items-center gap-3 rounded-4 p-3 mb-3"
+          style={{ background: "#FEF3E2", fontSize: ".85rem", color: "#7A5A1E" }}
+        >
+          <FiLink />
+          <span style={{ flex: 1, minWidth: 220 }}>
+            Có <b>{missingSlugCount}</b> sản phẩm chưa có link theo tên (đang dùng mã ngẫu nhiên).
+          </span>
+          <button
+            onClick={backfillSlugs}
+            disabled={backfilling}
+            className="btn btn-sm"
+            style={{ background: "#C9821E", color: "#fff", fontWeight: 600, opacity: backfilling ? 0.6 : 1 }}
+          >
+            {backfilling ? "Đang tạo..." : "Tạo link đẹp cho sản phẩm cũ"}
+          </button>
+        </div>
+      )}
 
       {/* Thanh tìm kiếm */}
       <div className="position-relative mb-3" style={{ width: 260 }}>
@@ -449,18 +508,33 @@ export default function AdminDashboardPage() {
           <div style={{ flex: 1, overflowY: "auto", background: "#F7FAF8" }}>
             <div style={{ maxWidth: 1100, margin: "0 auto", padding: "28px 24px" }}>
               <div className="row g-4">
-                {/* Cột trái: tên + hình ảnh */}
+                {/* Cột trái: tên + đường dẫn + hình ảnh */}
                 <div className="col-lg-6">
                   <div className="bg-white rounded-4 p-4 h-100" style={{ boxShadow: "0 4px 16px rgba(34,48,40,.06)" }}>
                     <label className="d-flex align-items-center gap-2 form-label" style={labelStyle}>
                       <FiEdit3 size={13} style={{ color: "#2F8F76" }} /> Tên sản phẩm
                     </label>
                     <input
-                      className="form-control mb-4"
+                      className="form-control mb-3"
                       style={{ borderColor: "#E1E9E3", borderRadius: 10 }}
                       value={editing.name}
                       onChange={(e) => setEditing({ ...editing, name: e.target.value })}
                     />
+
+                    <label className="d-flex align-items-center gap-2 form-label" style={labelStyle}>
+                      <FiLink size={13} style={{ color: "#2F8F76" }} /> Đường dẫn (không bắt buộc)
+                    </label>
+                    <input
+                      className="form-control mb-1"
+                      style={{ borderColor: "#E1E9E3", borderRadius: 10, fontSize: ".85rem" }}
+                      placeholder="Để trống: tự tạo từ tên sản phẩm"
+                      value={editing.slug ?? ""}
+                      onChange={(e) => setEditing({ ...editing, slug: e.target.value })}
+                    />
+                    <div className="mb-4" style={{ fontSize: ".72rem", color: "#96A0A8" }}>
+                      Link sản phẩm sẽ là: /san-pham/
+                      <b>{toSlug((editing.slug ?? "").trim() || editing.name) || "ten-san-pham"}</b>
+                    </div>
 
                     <label className="d-flex align-items-center gap-2 form-label" style={labelStyle}>
                       <FiImage size={13} style={{ color: "#2F8F76" }} /> Hình ảnh sản phẩm
