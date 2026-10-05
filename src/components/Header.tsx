@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { FiPhone, FiClock, FiMail, FiX, FiChevronRight } from "react-icons/fi";
 import { PiMagnifyingGlassBold } from "react-icons/pi";
 import { categoryGroups } from "../data/mockData";
+import { useCompanySettings } from "../hooks/useCompanySettings";
 
 export default function Header() {
   const [searchOpen, setSearchOpen] = useState(false);
@@ -11,6 +12,8 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [hoveredCat, setHoveredCat] = useState<string | null>(null);
   const navigate = useNavigate();
+  const company = useCompanySettings();
+  const phoneDigits = company.phone.replace(/\D/g, "");
 
   const submitSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,14 +46,14 @@ export default function Header() {
         <div className="container d-flex justify-content-between align-items-center">
           <div className="d-none d-md-flex gap-4">
             <span className="d-flex align-items-center gap-2">
-              <FiClock size={14} /> Thứ 2 – 7: 07:00–11:30 &amp; 13:00–16:30
+              <FiClock size={14} /> {company.workingHours}
             </span>
-            <a href="mailto:lptechco.ltd@gmail.com" className="d-flex align-items-center gap-2">
-              <FiMail size={14} /> lptechco.ltd@gmail.com
+            <a href={`mailto:${company.email}`} className="d-flex align-items-center gap-2">
+              <FiMail size={14} /> {company.email}
             </a>
           </div>
-          <a href="tel:0989766715" className="d-flex align-items-center gap-2 fw-medium ms-auto ms-md-0">
-            <FiPhone size={14} /> <span className="d-md-none">0989 766 715</span><span className="d-none d-md-inline">Hotline: 0989 766 715</span>
+          <a href={`tel:${phoneDigits}`} className="d-flex align-items-center gap-2 fw-medium ms-auto ms-md-0">
+            <FiPhone size={14} /> <span className="d-md-none">{company.phone}</span><span className="d-none d-md-inline">Hotline: {company.phone}</span>
           </a>
         </div>
       </div>
@@ -58,7 +61,7 @@ export default function Header() {
       <nav className="navbar navbar-expand-lg bg-white border-bottom py-3">
         <div className="container">
           <Link to="/" className="navbar-brand d-flex align-items-center">
-            <img src="/logo-icon.png" alt="LP Tech" height={52} />
+            <img src={company.logoHeader || "/logo-icon.png"} alt="LP Tech" height={52} />
           </Link>
 
           <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">

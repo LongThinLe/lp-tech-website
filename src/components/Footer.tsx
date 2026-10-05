@@ -34,7 +34,7 @@ export default function Footer() {
         <div className="container">
           <div className="row g-4">
             <div className="col-lg-3">
-              <img src="/logo-icon-gold.png" alt="LP Tech" className="mb-2" style={{ height: 52 }} />
+              <img src={s.logoFooter || "/logo-icon-gold.png"} alt="LP Tech" className="mb-2" style={{ height: 52 }} />
               <div style={{ fontSize: ".72rem", opacity: .8 }} className="mb-3">
                 {s.companyName} · MST: {s.taxCode}
               </div>
