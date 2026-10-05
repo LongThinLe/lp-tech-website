@@ -45,11 +45,17 @@ export default function ProductDetailPage() {
   // "Liên quan" đúng nghĩa — ưu tiên cùng danh mục trước, thiếu thì bù bằng cùng hãng,
   // vẫn thiếu nữa mới lấy bất kỳ sản phẩm khác (để luôn đủ 3 sản phẩm nếu database có đủ)
   const sameCategory = products.filter((prod) => prod.id !== p.id && prod.categoryId === p.categoryId);
-  const sameBrandOnly = products.filter(
-    (prod) => prod.id !== p.id && prod.brandId === p.brandId && prod.categoryId !== p.categoryId
-  );
+  // Chỉ so sánh hãng khi sản phẩm này CÓ hãng (brandId rỗng = không có hãng)
+  const sameBrandOnly = p.brandId
+    ? products.filter(
+        (prod) => prod.id !== p.id && prod.brandId === p.brandId && prod.categoryId !== p.categoryId
+      )
+    : [];
   const others = products.filter(
-    (prod) => prod.id !== p.id && prod.categoryId !== p.categoryId && prod.brandId !== p.brandId
+    (prod) =>
+      prod.id !== p.id &&
+      prod.categoryId !== p.categoryId &&
+      !sameBrandOnly.some((s) => s.id === prod.id)
   );
   const related = [...sameCategory, ...sameBrandOnly, ...others].slice(0, 3);
 
@@ -144,9 +150,11 @@ export default function ProductDetailPage() {
           </div>
 
           <div className="col-lg-6" data-aos="fade-left" data-aos-delay="120">
-            <div style={{ fontSize: ".8rem", color: "#2F8F76", fontWeight: 500 }} className="mb-2">
-              {brand?.name}
-            </div>
+            {brand && (
+              <div style={{ fontSize: ".8rem", color: "#2F8F76", fontWeight: 500 }} className="mb-2">
+                {brand.name}
+              </div>
+            )}
             <h1 className="h2 fw-semibold mb-3" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
               {p.name}
             </h1>
