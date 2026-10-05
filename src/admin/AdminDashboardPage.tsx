@@ -14,17 +14,19 @@ import {
 
 const allCategories = categoryGroups.flatMap((g) => g.items);
 
+// Số ảnh tối đa cho 1 sản phẩm (tính cả ảnh chính) — khách chưa chốt, đổi số này khi cần
+const MAX_IMAGES = 10;
+
 export default function AdminDashboardPage() {
   const [items, setItems] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Product | null>(null);
   const [showForm, setShowForm] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const secondaryFileRefs = [useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null)];
   const [isDragging, setIsDragging] = useState(false);
-  const [imageFileInfo, setImageFileInfo] = useState<{ name: string; size: string } | null>(null);
   const [specsText, setSpecsText] = useState("");
-  const [uploadingSlots, setUploadingSlots] = useState<Set<string>>(new Set());
+  // Số ảnh đang được tải lên (để hiện vòng xoay và khóa nút Lưu)
+  const [uploadingCount, setUploadingCount] = useState(0);
 
   // Lấy dữ liệu sản phẩm THẬT từ Firebase ngay khi trang vừa tải
   useEffect(() => {
@@ -84,12 +86,22 @@ export default function AdminDashboardPage() {
     return result;
   }, [items, search, sortAsc]);
 
+  // Gộp ảnh chính + ảnh phụ thành 1 danh sách duy nhất (ảnh đầu tiên = ảnh chính)
+  const allImages: string[] = editing
+    ? ([editing.image, ...(editing.images ?? [])].filter(Boolean) as string[])
+    : [];
+
+  // Ghi ngược danh sách ảnh về dạng "image" (chính) + "images" (phụ)
+  const setAllImages = (list: string[]) => {
+    setEditing((prev) => (prev ? { ...prev, image: list[0] ?? "", images: list.slice(1) } : prev));
+  };
+
   const openNew = () => {
     setEditing({
       id: `p${Date.now()}`,
       name: "",
       image: "",
-      images: ["", "", ""],
+      images: [],
       categoryId: allCategories[0]?.id ?? "",
       brandId: "", // Hãng không bắt buộc — mặc định để trống
       standards: [],
@@ -97,59 +109,68 @@ export default function AdminDashboardPage() {
       usageGuide: "",
       certification: "",
     });
-    setImageFileInfo(null);
     setSpecsText("");
     setShowForm(true);
   };
 
   const openEdit = (p: Product) => {
-    setEditing({ images: ["", "", ""], usageGuide: "", certification: "", ...p });
-    setImageFileInfo(null);
+    setEditing({
+      usageGuide: "",
+      certification: "",
+      ...p,
+      images: (p.images ?? []).filter(Boolean),
+    });
     setSpecsText((p.specs ?? []).join("\n"));
     setShowForm(true);
   };
 
-  // Tải ảnh THẬT lên Firebase Storage — chỉ lưu đường dẫn (URL) ngắn gọn vào Firestore,
-  // tránh lỗi "vượt quá 1MB" khi nhồi thẳng ảnh mã hóa (base64) vào database
-  const setMainImage = async (file: File) => {
-    setImageFileInfo({ name: file.name, size: `${(file.size / 1024 / 1024).toFixed(1)}MB` });
-    setUploadingSlots((prev) => new Set(prev).add("main"));
-    try {
-      const url = await uploadProductImage(file);
-      setEditing((prev) => (prev ? { ...prev, image: url } : prev));
-    } catch (err) {
-      console.error("Lỗi tải ảnh lên Firebase Storage:", err);
-      setToast({ message: "Tải ảnh lên thất bại — thử lại nhé." });
-    } finally {
-      setUploadingSlots((prev) => {
-        const next = new Set(prev);
-        next.delete("main");
-        return next;
-      });
+  // Chọn NHIỀU ảnh cùng lúc: tải song song lên Firebase Storage, chỉ lưu đường dẫn (URL) vào Firestore.
+  // Ảnh đầu tiên thành ảnh chính (nếu chưa có), các ảnh còn lại thành ảnh phụ.
+  const addImages = async (fileList: FileList | File[]) => {
+    const files = Array.from(fileList).filter((f) => f.type.startsWith("image/"));
+    if (files.length === 0) return;
+
+    const room = MAX_IMAGES - allImages.length - uploadingCount;
+    if (room <= 0) {
+      setToast({ message: `Mỗi sản phẩm tối đa ${MAX_IMAGES} ảnh.` });
+      return;
     }
+    const chosen = files.slice(0, room);
+    if (files.length > room) {
+      setToast({ message: `Chỉ nhận thêm ${room} ảnh (tối đa ${MAX_IMAGES} ảnh/sản phẩm).` });
+    }
+
+    setUploadingCount((c) => c + chosen.length);
+    const urls = await Promise.all(
+      chosen.map((f) =>
+        uploadProductImage(f).catch((err) => {
+          console.error("Lỗi tải ảnh lên Firebase Storage:", err);
+          return null;
+        })
+      )
+    );
+    const okUrls = urls.filter((u): u is string => !!u);
+
+    if (okUrls.length < chosen.length) {
+      setToast({ message: `Có ${chosen.length - okUrls.length} ảnh tải lên thất bại — thử lại nhé.` });
+    }
+
+    setEditing((prev) => {
+      if (!prev) return prev;
+      const list = [prev.image, ...(prev.images ?? [])].filter(Boolean) as string[];
+      const next = [...list, ...okUrls];
+      return { ...prev, image: next[0] ?? "", images: next.slice(1) };
+    });
+    setUploadingCount((c) => c - chosen.length);
   };
 
-  const setSecondaryImage = async (index: number, file: File) => {
-    const slotKey = `secondary-${index}`;
-    setUploadingSlots((prev) => new Set(prev).add(slotKey));
-    try {
-      const url = await uploadProductImage(file);
-      setEditing((prev) => {
-        if (!prev) return prev;
-        const imgs = [...(prev.images ?? ["", "", ""])];
-        imgs[index] = url;
-        return { ...prev, images: imgs };
-      });
-    } catch (err) {
-      console.error("Lỗi tải ảnh lên Firebase Storage:", err);
-      setToast({ message: "Tải ảnh lên thất bại — thử lại nhé." });
-    } finally {
-      setUploadingSlots((prev) => {
-        const next = new Set(prev);
-        next.delete(slotKey);
-        return next;
-      });
-    }
+  const removeImage = (index: number) => {
+    setAllImages(allImages.filter((_, i) => i !== index));
+  };
+
+  const makeMainImage = (index: number) => {
+    const picked = allImages[index];
+    setAllImages([picked, ...allImages.filter((_, i) => i !== index)]);
   };
 
   const save = async () => {
@@ -390,7 +411,7 @@ export default function AdminDashboardPage() {
         nếu dùng nhiều ảnh dung lượng lớn nên tải qua Firebase Storage.
       </div>
 
-      {/* Form thêm/sửa — thiết kế mới, có kéo-thả ảnh thật */}
+      {/* Form thêm/sửa — thiết kế mới, có kéo-thả nhiều ảnh */}
       {showForm && editing && (
         <div
           className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
@@ -443,61 +464,21 @@ export default function AdminDashboardPage() {
                 <FiImage size={13} style={{ color: "#2F8F76" }} /> Hình ảnh sản phẩm
               </label>
 
-              {/* Vùng kéo-thả / bấm chọn ảnh */}
+              {/* Ô chọn file ẩn — có "multiple" để chọn nhiều ảnh cùng lúc */}
               <input
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
+                multiple
                 className="d-none"
                 onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) setMainImage(file);
+                  if (e.target.files && e.target.files.length > 0) addImages(e.target.files);
+                  e.target.value = ""; // cho phép chọn lại đúng ảnh vừa chọn
                 }}
               />
 
-              {uploadingSlots.has("main") ? (
-                <div
-                  className="rounded-3 d-flex flex-column align-items-center justify-content-center mb-3"
-                  style={{ height: 140, background: "#F7FAF8", border: "1.5px dashed #B8CFC3", color: "#5B6B76", fontSize: ".8rem" }}
-                >
-                  <div className="spinner-border spinner-border-sm mb-2" style={{ color: "#2F8F76" }} role="status" />
-                  Đang tải ảnh lên...
-                </div>
-              ) : editing.image ? (
-                <div className="position-relative rounded-3 overflow-hidden mb-3" style={{ height: 140 }}>
-                  <img src={editing.image} alt="Xem trước" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  <span
-                    className="position-absolute top-0 start-0 m-2 fw-semibold rounded-pill"
-                    style={{ background: "rgba(255,255,255,.92)", color: "#22684F", fontSize: ".62rem", padding: "3px 8px" }}
-                  >
-                    Ảnh chính
-                  </span>
-                  <div
-                    className="position-absolute bottom-0 start-0 end-0 d-flex align-items-center justify-content-between"
-                    style={{ padding: "10px 12px", background: "linear-gradient(180deg, rgba(0,0,0,0) 45%, rgba(0,0,0,.55) 100%)" }}
-                  >
-                    <span style={{ color: "#fff", fontSize: ".68rem" }}>
-                      {imageFileInfo ? `${imageFileInfo.name} · ${imageFileInfo.size}` : "Ảnh hiện tại"}
-                    </span>
-                    <div className="d-flex gap-2">
-                      <button
-                        onClick={() => fileInputRef.current?.click()}
-                        className="btn btn-sm rounded-pill"
-                        style={{ background: "rgba(255,255,255,.92)", color: "#223028", fontSize: ".68rem", fontWeight: 600 }}
-                      >
-                        Đổi ảnh
-                      </button>
-                      <button
-                        onClick={() => { setEditing({ ...editing, image: "" }); setImageFileInfo(null); }}
-                        className="btn btn-sm rounded-pill"
-                        style={{ background: "rgba(255,255,255,.92)", color: "#B93A31", fontSize: ".68rem", fontWeight: 600 }}
-                      >
-                        Xóa
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ) : (
+              {allImages.length === 0 && uploadingCount === 0 ? (
+                /* Chưa có ảnh nào: vùng kéo-thả lớn */
                 <div
                   onClick={() => fileInputRef.current?.click()}
                   onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
@@ -505,10 +486,9 @@ export default function AdminDashboardPage() {
                   onDrop={(e) => {
                     e.preventDefault();
                     setIsDragging(false);
-                    const file = e.dataTransfer.files?.[0];
-                    if (file) setMainImage(file);
+                    if (e.dataTransfer.files?.length) addImages(e.dataTransfer.files);
                   }}
-                  className="rounded-3 text-center mb-3"
+                  className="rounded-3 text-center mb-2"
                   style={{
                     border: `1.5px dashed ${isDragging ? "#2F8F76" : "#B8CFC3"}`,
                     background: isDragging ? "#EEF4F0" : "#F7FAF8",
@@ -524,49 +504,100 @@ export default function AdminDashboardPage() {
                     <FiUploadCloud size={20} />
                   </div>
                   <div style={{ fontSize: ".85rem", fontWeight: 600, color: "#223028" }}>
-                    Kéo ảnh vào đây hoặc <span style={{ color: "#2F8F76", textDecoration: "underline" }}>chọn từ máy</span>
+                    Kéo nhiều ảnh vào đây hoặc <span style={{ color: "#2F8F76", textDecoration: "underline" }}>chọn từ máy</span>
                   </div>
-                  <div style={{ fontSize: ".72rem", color: "#96A0A8", marginTop: 4 }}>PNG, JPG — tối đa 5MB</div>
+                  <div style={{ fontSize: ".72rem", color: "#96A0A8", marginTop: 4 }}>
+                    PNG, JPG — chọn được nhiều ảnh cùng lúc, tối đa {MAX_IMAGES} ảnh
+                  </div>
+                </div>
+              ) : (
+                /* Đã có ảnh: lưới ảnh + ô "+" để thêm tiếp */
+                <div className="row g-2 mb-2">
+                  {allImages.map((img, i) => (
+                    <div className="col-4" key={`${img}-${i}`}>
+                      <div
+                        className="position-relative rounded-3 overflow-hidden"
+                        style={{ aspectRatio: "1/1", border: "1.5px solid #E1E9E3" }}
+                      >
+                        <img
+                          src={img}
+                          alt={i === 0 ? "Ảnh chính" : `Ảnh phụ ${i}`}
+                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        />
+                        {i === 0 && (
+                          <span
+                            className="position-absolute top-0 start-0 m-1 fw-semibold rounded-pill"
+                            style={{ background: "rgba(255,255,255,.92)", color: "#22684F", fontSize: ".6rem", padding: "2px 7px" }}
+                          >
+                            Ảnh chính
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => removeImage(i)}
+                          aria-label="Xóa ảnh"
+                          className="position-absolute top-0 end-0 m-1 d-flex align-items-center justify-content-center border-0 rounded-circle"
+                          style={{ width: 22, height: 22, background: "rgba(255,255,255,.92)", color: "#B93A31", cursor: "pointer" }}
+                        >
+                          <FiX size={12} />
+                        </button>
+                        {i > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => makeMainImage(i)}
+                            className="position-absolute bottom-0 start-0 end-0 border-0"
+                            style={{ background: "rgba(0,0,0,.5)", color: "#fff", fontSize: ".6rem", padding: "3px 0", cursor: "pointer" }}
+                          >
+                            Đặt làm chính
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Ô đang tải ảnh lên */}
+                  {Array.from({ length: uploadingCount }).map((_, i) => (
+                    <div className="col-4" key={`uploading-${i}`}>
+                      <div
+                        className="rounded-3 d-flex align-items-center justify-content-center"
+                        style={{ aspectRatio: "1/1", background: "#F7FAF8", border: "1.5px dashed #B8CFC3" }}
+                      >
+                        <div className="spinner-border spinner-border-sm" style={{ color: "#2F8F76" }} role="status" />
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Ô "+" thêm ảnh — ẩn khi đã đủ số ảnh tối đa */}
+                  {allImages.length + uploadingCount < MAX_IMAGES && (
+                    <div className="col-4">
+                      <div
+                        onClick={() => fileInputRef.current?.click()}
+                        onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                        onDragLeave={() => setIsDragging(false)}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          setIsDragging(false);
+                          if (e.dataTransfer.files?.length) addImages(e.dataTransfer.files);
+                        }}
+                        className="rounded-3 d-flex flex-column align-items-center justify-content-center"
+                        style={{
+                          aspectRatio: "1/1",
+                          cursor: "pointer",
+                          border: `1.5px dashed ${isDragging ? "#2F8F76" : "#B8CFC3"}`,
+                          background: isDragging ? "#EEF4F0" : "#F7FAF8",
+                          color: "#96A0A8",
+                        }}
+                      >
+                        <span style={{ fontSize: "1.4rem", lineHeight: 1 }}>+</span>
+                        <span style={{ fontSize: ".62rem", marginTop: 2 }}>Thêm ảnh</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
-
-              {/* 3 ô ảnh phụ */}
-              <div className="row g-2 mb-2">
-                {[0, 1, 2].map((i) => (
-                  <div className="col-4" key={i}>
-                    <input
-                      ref={secondaryFileRefs[i]}
-                      type="file"
-                      accept="image/*"
-                      className="d-none"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) setSecondaryImage(i, file);
-                      }}
-                    />
-                    <div
-                      onClick={() => secondaryFileRefs[i].current?.click()}
-                      className="rounded-3 d-flex align-items-center justify-content-center overflow-hidden"
-                      style={{
-                        aspectRatio: "1/1",
-                        cursor: "pointer",
-                        border: editing.images?.[i] ? "1.5px solid #E1E9E3" : "1.5px dashed #B8CFC3",
-                        background: editing.images?.[i] ? "transparent" : "#F7FAF8",
-                      }}
-                    >
-                      {uploadingSlots.has(`secondary-${i}`) ? (
-                        <div className="spinner-border spinner-border-sm" style={{ color: "#2F8F76" }} role="status" />
-                      ) : editing.images?.[i] ? (
-                        <img src={editing.images[i]} alt={`Ảnh phụ ${i + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                      ) : (
-                        <span style={{ fontSize: "1.2rem", color: "#96A0A8" }}>+</span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
               <div className="mb-3" style={{ fontSize: ".72rem", color: "#96A0A8" }}>
-                Ảnh chính hiện lớn ở trang sản phẩm — 3 ô nhỏ là ảnh phụ, không bắt buộc.
+                Ảnh đầu tiên là ảnh chính (hiện lớn ở trang sản phẩm), các ảnh sau là ảnh phụ.
+                Đã có {allImages.length}/{MAX_IMAGES} ảnh.
               </div>
 
               <div className="row g-2 mb-4">
@@ -642,16 +673,16 @@ export default function AdminDashboardPage() {
 
               <button
                 onClick={save}
-                disabled={uploadingSlots.size > 0}
+                disabled={uploadingCount > 0}
                 className="btn w-100"
                 style={{
                   background: "linear-gradient(135deg, #2F8F76, #22684F)", color: "#fff", fontWeight: 700,
                   fontSize: ".9rem", padding: 13, border: "none", borderRadius: 11,
                   boxShadow: "0 6px 16px rgba(47,143,118,.3)",
-                  opacity: uploadingSlots.size > 0 ? .6 : 1,
+                  opacity: uploadingCount > 0 ? .6 : 1,
                 }}
               >
-                {uploadingSlots.size > 0 ? "Đang tải ảnh lên..." : "Lưu sản phẩm"}
+                {uploadingCount > 0 ? "Đang tải ảnh lên..." : "Lưu sản phẩm"}
               </button>
             </div>
           </div>
