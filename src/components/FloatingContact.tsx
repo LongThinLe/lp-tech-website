@@ -1,16 +1,16 @@
 import { SiZalo } from "react-icons/si";
 import { FaPhoneAlt } from "react-icons/fa";
+import { useCompanySettings } from "../hooks/useCompanySettings";
 
-// Số điện thoại thật của LP Tech — Zalo mở qua link zalo.me, gọi điện qua tel:
-const PHONE_DISPLAY = "0989.766.715";
-const PHONE_TEL = "0989766715";
-const ZALO_LINK = `https://zalo.me/${PHONE_TEL}`;
-
+// Số điện thoại lấy từ mục "Thiết lập thông tin" trong admin — Zalo mở qua link zalo.me, gọi điện qua tel:
 export default function FloatingContact() {
+  const { phone } = useCompanySettings();
+  const phoneTel = phone.replace(/\D/g, "");
+
   return (
     <div className="floating-contact">
-      <a href={ZALO_LINK} target="_blank" rel="noreferrer" className="contact-pill contact-pill--zalo">
-        <span>{PHONE_DISPLAY}</span>
+      <a href={`https://zalo.me/${phoneTel}`} target="_blank" rel="noreferrer" className="contact-pill contact-pill--zalo">
+        <span>{phone}</span>
         <span className="contact-pill__icon">
           <span className="pulse-ring" />
           <span className="pulse-ring" style={{ animationDelay: ".6s" }} />
@@ -18,8 +18,8 @@ export default function FloatingContact() {
         </span>
       </a>
 
-      <a href={`tel:${PHONE_TEL}`} className="contact-pill contact-pill--call">
-        <span>{PHONE_DISPLAY}</span>
+      <a href={`tel:${phoneTel}`} className="contact-pill contact-pill--call">
+        <span>{phone}</span>
         <span className="contact-pill__icon">
           <span className="pulse-ring" />
           <span className="pulse-ring" style={{ animationDelay: ".6s" }} />

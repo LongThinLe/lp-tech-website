@@ -2,10 +2,14 @@ import { Link, useLocation } from "react-router-dom";
 import { FiPhone, FiMail, FiMapPin } from "react-icons/fi";
 import { FaFacebookF, FaInstagram } from "react-icons/fa";
 import { SiGmail, SiZalo } from "react-icons/si";
+import { useCompanySettings } from "../hooks/useCompanySettings";
+import { mapEmbedSrc, mapOpenLink } from "../services/settingsService";
 
 export default function Footer() {
   const { pathname } = useLocation();
   const isContactPage = pathname === "/lien-he";
+  const s = useCompanySettings();
+  const phoneDigits = s.phone.replace(/\D/g, "");
 
   return (
     <footer>
@@ -16,11 +20,9 @@ export default function Footer() {
               <div className="rounded-circle flex-shrink-0" style={{ width: 56, height: 56, background: "#F1EDE4" }} />
               <div>
                 <div className="fw-semibold" style={{ fontSize: ".95rem" }}>Cần tư vấn đặt hàng số lượng lớn?</div>
-                <div style={{ fontSize: ".82rem", color: "#5B6B76" }}>
-                  Ms. Khánh Linh — Phụ trách kinh doanh · phản hồi trong 15 phút
-                </div>
+                <div style={{ fontSize: ".82rem", color: "#5B6B76" }}>{s.supportLine}</div>
               </div>
-              <a href="tel:0989766715" className="btn btn-accent-solid ms-auto flex-shrink-0">
+              <a href={`tel:${phoneDigits}`} className="btn btn-accent-solid ms-auto flex-shrink-0">
                 Gọi ngay
               </a>
             </div>
@@ -34,26 +36,30 @@ export default function Footer() {
             <div className="col-lg-3">
               <img src="/logo-icon-gold.png" alt="LP Tech" className="mb-2" style={{ height: 52 }} />
               <div style={{ fontSize: ".72rem", opacity: .8 }} className="mb-3">
-                Công ty TNHH TM LP Tech · MST: 3604118169
+                {s.companyName} · MST: {s.taxCode}
               </div>
               <div className="d-flex flex-column gap-2" style={{ fontSize: ".875rem" }}>
                 <span className="d-flex align-items-start gap-2">
                   <FiMapPin size={14} className="mt-1 flex-shrink-0" />
-                  92, Tổ 17C, Khu phố 3, Phường Tam Hiệp, Thành phố Đồng Nai, Việt Nam
+                  {s.address}
                 </span>
                 <span className="d-flex align-items-center gap-2">
-                  <FiPhone size={14} className="flex-shrink-0" /> 0989 766 715
+                  <FiPhone size={14} className="flex-shrink-0" /> {s.phone}
                 </span>
                 <span className="d-flex align-items-center gap-2">
-                  <FiMail size={14} className="flex-shrink-0" /> lptechco.ltd@gmail.com
+                  <FiMail size={14} className="flex-shrink-0" /> {s.email}
                 </span>
               </div>
 
               <div className="d-flex gap-2 mt-4">
-                <a href="https://www.facebook.com/linh.tau.503" target="_blank" rel="noreferrer" aria-label="Facebook" className="social-icon"><FaFacebookF size={21} /></a>
-                <a href="https://zalo.me/0989766715" target="_blank" rel="noreferrer" aria-label="Zalo" className="social-icon"><SiZalo size={24} /></a>
-                <a href="mailto:lptechco.ltd@gmail.com" aria-label="Gmail" className="social-icon"><SiGmail size={21} /></a>
-                <a href="#" aria-label="Instagram" className="social-icon"><FaInstagram size={22} /></a>
+                {s.facebook && (
+                  <a href={s.facebook} target="_blank" rel="noreferrer" aria-label="Facebook" className="social-icon"><FaFacebookF size={21} /></a>
+                )}
+                <a href={`https://zalo.me/${phoneDigits}`} target="_blank" rel="noreferrer" aria-label="Zalo" className="social-icon"><SiZalo size={24} /></a>
+                <a href={`mailto:${s.email}`} aria-label="Gmail" className="social-icon"><SiGmail size={21} /></a>
+                {s.instagram && (
+                  <a href={s.instagram} target="_blank" rel="noreferrer" aria-label="Instagram" className="social-icon"><FaInstagram size={22} /></a>
+                )}
               </div>
             </div>
 
@@ -80,10 +86,19 @@ export default function Footer() {
               <div className="d-flex gap-2 align-items-start">
                 <div style={{ width: 220 }}>
                   <div className="rounded-3 overflow-hidden" style={{ border: "1px solid rgba(251,251,248,.15)", height: 160 }}>
-                    <iframe title="Bản đồ công ty" width="100%" height="100%" style={{ border: 0 }} loading="lazy" src="https://www.google.com/maps?q=92,%20T%E1%BB%95%2017C,%20Khu%20ph%E1%BB%91%203,%20Ph%C6%B0%E1%BB%9Dng%20Tam%20Hi%E1%BB%87p,%20%C4%90%E1%BB%93ng%20Nai&output=embed" />
+                    <iframe title="Bản đồ công ty" width="100%" height="100%" style={{ border: 0 }} loading="lazy" src={mapEmbedSrc(s)} />
                   </div>
+                  <a
+                    href={mapOpenLink(s)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-decoration-none d-inline-block mt-2"
+                    style={{ fontSize: ".75rem", color: "inherit", textDecoration: "underline" }}
+                  >
+                    Mở trong Google Maps
+                  </a>
                 </div>
-                <a href="mailto:lptechco.ltd@gmail.com" aria-label="Gửi email cho LP Tech" title="Gửi email cho LP Tech" className="d-flex align-items-center justify-content-center flex-shrink-0" style={{ height: 160 }}>
+                <a href={`mailto:${s.email}`} aria-label="Gửi email cho LP Tech" title="Gửi email cho LP Tech" className="d-flex align-items-center justify-content-center flex-shrink-0" style={{ height: 160 }}>
                   <svg width="200" height="200" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
                     <rect x="2" y="6" width="44" height="36" rx="6" fill="#fff" />
                     <path d="M2 12L24 27L46 12V38.5C46 40.43 44.43 42 42.5 42H41V16L24 29L7 16V42H5.5C3.57 42 2 40.43 2 38.5V12Z" fill="#EA4335" />
@@ -97,7 +112,7 @@ export default function Footer() {
           </div>
 
           <div className="mt-5 pt-4" style={{ borderTop: "1px solid rgba(251,250,247,.12)", fontSize: ".8rem" }}>
-            <span>© 2026 Công ty TNHH TM LP TECH. All rights reserved.</span>
+            <span>© 2026 {s.companyName}. All rights reserved.</span>
           </div>
         </div>
       </div>

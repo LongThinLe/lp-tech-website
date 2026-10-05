@@ -1,12 +1,14 @@
 import { useState, type FormEvent } from "react";
 import { FiMapPin, FiPhone, FiMail, FiCheckCircle, FiAlertCircle } from "react-icons/fi";
 import { addLead } from "../services/leadService";
+import { useCompanySettings } from "../hooks/useCompanySettings";
 
 type Status = "idle" | "loading" | "success" | "error";
 
 export default function ContactPage() {
   const [form, setForm] = useState({ name: "", phone: "", email: "", message: "" });
   const [status, setStatus] = useState<Status>("idle");
+  const company = useCompanySettings();
 
   const update = (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm((f) => ({ ...f, [field]: e.target.value }));
@@ -46,21 +48,21 @@ export default function ContactPage() {
                 <div className="trust-item__icon flex-shrink-0"><FiMapPin /></div>
                 <div>
                   <div className="fw-semibold mb-1">Địa chỉ</div>
-                  <div style={{ fontSize: ".9rem", color: "#5B6B76" }}>92, Tổ 17C, Khu phố 3, Phường Tam Hiệp, Thành phố Đồng Nai, Việt Nam</div>
+                  <div style={{ fontSize: ".9rem", color: "#5B6B76" }}>{company.address}</div>
                 </div>
               </div>
               <div className="d-flex gap-3">
                 <div className="trust-item__icon flex-shrink-0"><FiPhone /></div>
                 <div>
                   <div className="fw-semibold mb-1">Hotline</div>
-                  <div style={{ fontSize: ".9rem", color: "#5B6B76" }}>0989 766 715</div>
+                  <div style={{ fontSize: ".9rem", color: "#5B6B76" }}>{company.phone}</div>
                 </div>
               </div>
               <div className="d-flex gap-3">
                 <div className="trust-item__icon flex-shrink-0"><FiMail /></div>
                 <div>
                   <div className="fw-semibold mb-1">Email</div>
-                  <div style={{ fontSize: ".9rem", color: "#5B6B76" }}>lptechco.ltd@gmail.com</div>
+                  <div style={{ fontSize: ".9rem", color: "#5B6B76" }}>{company.email}</div>
                 </div>
               </div>
             </div>

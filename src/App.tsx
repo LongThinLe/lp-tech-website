@@ -20,6 +20,7 @@ import AdminDashboardPage from "./admin/AdminDashboardPage";
 import AdminCategoriesPage from "./admin/AdminCategoriesPage";
 import AdminBrandsPage from "./admin/AdminBrandsPage";
 import AdminLeadsPage from "./admin/AdminLeadsPage";
+import AdminSettingsPage from "./admin/AdminSettingsPage";
 import AdminLoginPage from "./admin/AdminLoginPage";
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -59,6 +60,7 @@ function App() {
           <Route path="danh-muc" element={<AdminCategoriesPage />} />
           <Route path="hang-phan-phoi" element={<AdminBrandsPage />} />
           <Route path="yeu-cau-bao-gia" element={<AdminLeadsPage />} />
+          <Route path="thiet-lap" element={<AdminSettingsPage />} />
         </Route>
       </Routes>
     );
