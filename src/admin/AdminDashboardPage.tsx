@@ -91,7 +91,7 @@ export default function AdminDashboardPage() {
       image: "",
       images: ["", "", ""],
       categoryId: allCategories[0]?.id ?? "",
-      brandId: brands[0]?.id ?? "",
+      brandId: "", // Hãng không bắt buộc — mặc định để trống
       standards: [],
       specs: [],
       usageGuide: "",
@@ -587,14 +587,15 @@ export default function AdminDashboardPage() {
                 </div>
                 <div className="col-6">
                   <label className="d-flex align-items-center gap-2 form-label" style={{ fontSize: ".78rem", fontWeight: 600, color: "#3D4A44" }}>
-                    <FiBriefcase size={13} style={{ color: "#2F8F76" }} /> Hãng phân phối
+                    <FiBriefcase size={13} style={{ color: "#2F8F76" }} /> Hãng phân phối (không bắt buộc)
                   </label>
                   <select
                     className="form-control"
                     style={{ borderColor: "#E1E9E3", borderRadius: 10, fontSize: ".85rem" }}
-                    value={editing.brandId}
+                    value={editing.brandId ?? ""}
                     onChange={(e) => setEditing({ ...editing, brandId: e.target.value })}
                   >
+                    <option value="">— Không có hãng —</option>
                     {brands.map((b) => (
                       <option key={b.id} value={b.id}>{b.name}</option>
                     ))}
