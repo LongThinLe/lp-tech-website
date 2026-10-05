@@ -14,12 +14,14 @@ import AboutPage from "./pages/AboutPage";
 import ContactPage from "./pages/ContactPage";
 import ServicesPage from "./pages/ServicesPage";
 import NewsPage from "./pages/NewsPage";
+import NewsDetailPage from "./pages/NewsDetailPage";
 import AdminLayout from "./admin/AdminLayout";
 import AdminDashboardPage from "./admin/AdminDashboardPage";
 
 import AdminCategoriesPage from "./admin/AdminCategoriesPage";
 import AdminBrandsPage from "./admin/AdminBrandsPage";
 import AdminLeadsPage from "./admin/AdminLeadsPage";
+import AdminNewsPage from "./admin/AdminNewsPage";
 import AdminSettingsPage from "./admin/AdminSettingsPage";
 import AdminLoginPage from "./admin/AdminLoginPage";
 
@@ -60,6 +62,7 @@ function App() {
           <Route path="danh-muc" element={<AdminCategoriesPage />} />
           <Route path="hang-phan-phoi" element={<AdminBrandsPage />} />
           <Route path="yeu-cau-bao-gia" element={<AdminLeadsPage />} />
+          <Route path="tin-tuc" element={<AdminNewsPage />} />
           <Route path="thiet-lap" element={<AdminSettingsPage />} />
         </Route>
       </Routes>
@@ -76,6 +79,7 @@ function App() {
         <Route path="/gioi-thieu" element={<AboutPage />} />
         <Route path="/dich-vu" element={<ServicesPage />} />
         <Route path="/tin-tuc" element={<NewsPage />} />
+        <Route path="/tin-tuc/:slug" element={<NewsDetailPage />} />
         <Route path="/lien-he" element={<ContactPage />} />
         <Route path="*" element={<HomePage />} />
       </Routes>

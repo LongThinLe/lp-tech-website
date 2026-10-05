@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { useClerk, useUser } from "@clerk/clerk-react";
-import { FiGrid, FiLayers, FiBriefcase, FiMessageSquare, FiSettings } from "react-icons/fi";
+import { FiGrid, FiLayers, FiBriefcase, FiMessageSquare, FiSettings, FiFileText } from "react-icons/fi";
 import { subscribeToLeads } from "../services/leadService";
 
 const navItems = [
@@ -9,6 +9,7 @@ const navItems = [
   { to: "/admin/danh-muc", label: "Danh mục", icon: <FiLayers /> },
   { to: "/admin/hang-phan-phoi", label: "Hãng phân phối", icon: <FiBriefcase /> },
   { to: "/admin/yeu-cau-bao-gia", label: "Yêu cầu báo giá", icon: <FiMessageSquare /> },
+  { to: "/admin/tin-tuc", label: "Tin tức", icon: <FiFileText /> },
   { to: "/admin/thiet-lap", label: "Thiết lập thông tin", icon: <FiSettings /> },
 ];
 
