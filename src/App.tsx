@@ -21,6 +21,7 @@ import AdminDashboardPage from "./admin/AdminDashboardPage";
 import AdminCategoriesPage from "./admin/AdminCategoriesPage";
 import AdminBrandsPage from "./admin/AdminBrandsPage";
 import AdminLeadsPage from "./admin/AdminLeadsPage";
+import AdminServicesPage from "./admin/AdminServicesPage";
 import AdminNewsPage from "./admin/AdminNewsPage";
 import AdminSettingsPage from "./admin/AdminSettingsPage";
 import AdminLoginPage from "./admin/AdminLoginPage";
@@ -62,6 +63,7 @@ function App() {
           <Route path="danh-muc" element={<AdminCategoriesPage />} />
           <Route path="hang-phan-phoi" element={<AdminBrandsPage />} />
           <Route path="yeu-cau-bao-gia" element={<AdminLeadsPage />} />
+          <Route path="dich-vu" element={<AdminServicesPage />} />
           <Route path="tin-tuc" element={<AdminNewsPage />} />
           <Route path="thiet-lap" element={<AdminSettingsPage />} />
         </Route>

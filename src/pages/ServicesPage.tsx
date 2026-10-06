@@ -1,46 +1,10 @@
+import { useEffect, useState } from "react";
 import { FiCheckCircle, FiPhoneCall } from "react-icons/fi";
-
-const SERVICES = [
-  {
-    id: "packaging",
-    badge: "Industrial Supply",
-    title: "Vật Tư Đóng Gói Chuẩn Công Nghiệp",
-    subtitle: "Tối ưu hóa chuỗi vận hành nhà kho & xuất khẩu",
-    desc: "Giải pháp bảo vệ hàng hóa toàn diện với màng PE cao cấp, băng keo chịu lực và vật liệu chống sốc tiêu chuẩn quốc tế.",
-    features: [
-      "Đạt tiêu chuẩn xuất khẩu EU/US",
-      "Độ giãn cao, tiết kiệm vật tư sử dụng",
-      "Giao hàng nhanh trong khu vực Đồng Nai",
-    ],
-    featured: false,
-  },
-  {
-    id: "lab-supplies",
-    badge: "Lab & Science",
-    title: "Thiết Bị & Vật Tư Phòng Lab Chuyên Sâu",
-    subtitle: "Chính xác tuyệt đối cho R&D và Kiểm định QC",
-    desc: "Cung cấp dụng cụ thủy tinh, hóa chất tinh khiết và thiết bị đo lường chính xác cao với đầy đủ chứng nhận CO/CQ nguồn gốc.",
-    features: [
-      "Chứng nhận CO/CQ đầy đủ theo lô hàng",
-      "Hàng chính hãng, nguồn gốc rõ ràng",
-      "Tư vấn kỹ thuật bởi đội ngũ chuyên môn",
-    ],
-    featured: true,
-  },
-  {
-    id: "consulting",
-    badge: "Enterprise Solution",
-    title: "Tư Vấn Giải Pháp Cung Ứng Định Kỳ",
-    subtitle: "Tối ưu chi phí & đảm bảo không đứt gãy chuỗi cung ứng",
-    desc: "Khảo sát quy trình thực tế tại nhà máy, đề xuất vật tư thay thế tối ưu và lập kế hoạch giao hàng định kỳ theo nhu cầu sản xuất.",
-    features: [
-      "Khảo sát nhu cầu thực tế miễn phí",
-      "Chiết khấu theo sản lượng hợp tác dài hạn",
-      "Hỗ trợ kỹ thuật xuyên suốt quá trình dùng",
-    ],
-    featured: false,
-  },
-];
+import {
+  getServices,
+  DEFAULT_SERVICES,
+  type ServiceItem,
+} from "../services/serviceService";
 
 const COMMITMENTS = [
   { label: "Hàng chính hãng", desc: "Nguồn gốc rõ ràng" },
@@ -50,6 +14,19 @@ const COMMITMENTS = [
 ];
 
 export default function ServicesPage() {
+  // Hiện dịch vụ mặc định ngay, nếu Firebase có dữ liệu thì thay bằng dữ liệu admin nhập
+  const [services, setServices] = useState<ServiceItem[]>(DEFAULT_SERVICES);
+
+  useEffect(() => {
+    getServices()
+      .then((list) => {
+        if (list.length > 0) setServices(list.filter((s) => !s.hidden));
+      })
+      .catch(() => {
+        /* giữ dịch vụ mặc định */
+      });
+  }, []);
+
   return (
     <div style={{ background: "#FBFBF8", color: "#223028" }}>
       <section
@@ -110,36 +87,45 @@ export default function ServicesPage() {
       <section className="py-5">
         <div className="container">
           <div className="row g-4">
-            {SERVICES.map((s) => (
-              <div key={s.id} className="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay={SERVICES.indexOf(s) * 100}>
+            {services.map((s, index) => (
+              <div key={s.id} className="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay={index * 100}>
                 <div className="p-4 p-xl-5 rounded-5 h-100 d-flex flex-column justify-content-between position-relative" style={{ background: s.featured ? "#22684F" : "#FFFFFF", color: s.featured ? "#FFFFFF" : "#223028", border: s.featured ? "none" : "1px solid #E1E9E3", boxShadow: s.featured ? "0 20px 40px rgba(34,104,79,0.25)" : "0 4px 20px rgba(0,0,0,0.03)" }}>
                   <div>
-                    <span className="badge mb-4 px-3 py-2 rounded-pill" style={{ background: s.featured ? "rgba(255,255,255,0.15)" : "#E4F1EA", color: s.featured ? "#7FD9BE" : "#1A5240", fontWeight: 600, fontSize: "0.75rem", letterSpacing: "0.5px" }}>
-                      {s.badge}
-                    </span>
+                    {s.badge && (
+                      <span className="badge mb-4 px-3 py-2 rounded-pill" style={{ background: s.featured ? "rgba(255,255,255,0.15)" : "#E4F1EA", color: s.featured ? "#7FD9BE" : "#1A5240", fontWeight: 600, fontSize: "0.75rem", letterSpacing: "0.5px" }}>
+                        {s.badge}
+                      </span>
+                    )}
 
                     <h3 className="fw-semibold mb-2" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: "1.2rem", color: s.featured ? "#fff" : "#223028" }}>
                       {s.title}
                     </h3>
 
-                    <p className="small mb-4" style={{ color: s.featured ? "rgba(255,255,255,0.7)" : "#5B6B76" }}>
-                      {s.subtitle}
-                    </p>
+                    {s.subtitle && (
+                      <p className="small mb-4" style={{ color: s.featured ? "rgba(255,255,255,0.7)" : "#5B6B76" }}>
+                        {s.subtitle}
+                      </p>
+                    )}
 
-                    <p className="mb-4" style={{ fontSize: "0.95rem", lineHeight: 1.6, opacity: s.featured ? 0.9 : 0.85 }}>
-                      {s.desc}
-                    </p>
+                    {s.desc && (
+                      <p className="mb-4" style={{ fontSize: "0.95rem", lineHeight: 1.6, opacity: s.featured ? 0.9 : 0.85 }}>
+                        {s.desc}
+                      </p>
+                    )}
 
-                    <hr style={{ borderColor: s.featured ? "rgba(255,255,255,0.15)" : "#E1E9E3" }} className="my-4" />
-
-                    <ul className="list-unstyled d-flex flex-column gap-3 mb-5">
-                      {s.features.map((f, i) => (
-                        <li key={i} className="d-flex align-items-center gap-2" style={{ fontSize: "0.9rem" }}>
-                          <FiCheckCircle style={{ color: s.featured ? "#7FD9BE" : "#2F8F76" }} className="flex-shrink-0" size={18} />
-                          <span style={{ opacity: s.featured ? 0.95 : 0.85 }}>{f}</span>
-                        </li>
-                      ))}
-                    </ul>
+                    {s.features.length > 0 && (
+                      <>
+                        <hr style={{ borderColor: s.featured ? "rgba(255,255,255,0.15)" : "#E1E9E3" }} className="my-4" />
+                        <ul className="list-unstyled d-flex flex-column gap-3 mb-5">
+                          {s.features.map((f, i) => (
+                            <li key={i} className="d-flex align-items-center gap-2" style={{ fontSize: "0.9rem" }}>
+                              <FiCheckCircle style={{ color: s.featured ? "#7FD9BE" : "#2F8F76" }} className="flex-shrink-0" size={18} />
+                              <span style={{ opacity: s.featured ? 0.95 : 0.85 }}>{f}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
