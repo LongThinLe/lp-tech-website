@@ -3,10 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { FiPhone, FiClock, FiMail, FiX, FiChevronRight } from "react-icons/fi";
 import { PiMagnifyingGlassBold } from "react-icons/pi";
-import { categoryGroups } from "../data/mockData";
+import { useCategoryGroups } from "../services/categoryService";
 import { useCompanySettings } from "../hooks/useCompanySettings";
 
 export default function Header() {
+  const categoryGroups = useCategoryGroups();
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);

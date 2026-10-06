@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { categoryGroups } from "../data/mockData";
+import { useCategoryGroups } from "../services/categoryService";
 import { getBrands } from "../services/brandService";
 import type { Brand } from "../services/brandService";
 import { getProducts } from "../services/productService";
@@ -9,6 +9,7 @@ import type { Product } from "../types";
 const thumbTones = ["#CDE4D8", "#DCEBE2", "#E4F1EA", "#EEF4F0"];
 
 export default function ProductsPage() {
+  const categoryGroups = useCategoryGroups();
   const [searchParams, setSearchParams] = useSearchParams();
   const activeCat = searchParams.get("cat");
   const activeBrand = searchParams.get("brand");

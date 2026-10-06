@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { FiArrowRight, FiHeadphones, FiUsers, FiTruck } from "react-icons/fi";
-import { categoryGroups } from "../data/mockData";
+import { useCategoryGroups } from "../services/categoryService";
 
 const heroImages = [
   "/hero-warehouse.jpg",
@@ -20,6 +20,7 @@ const brandLogos = [
 ];
 
 export default function Hero() {
+  const categoryGroups = useCategoryGroups();
   const [current, setCurrent] = useState(0);
 
   useEffect(() => {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { categoryGroups } from "../data/mockData";
+import { useCategoryGroups } from "../services/categoryService";
 import { getBrands } from "../services/brandService";
 import type { Brand } from "../services/brandService";
 import { addProduct, getProducts, updateProduct, deleteProduct } from "../services/productService";
@@ -13,12 +13,14 @@ import {
   FiUploadCloud, FiImage, FiEdit3, FiLink,
 } from "react-icons/fi";
 
-const allCategories = categoryGroups.flatMap((g) => g.items);
-
 // Số ảnh tối đa cho 1 sản phẩm (tính cả ảnh chính) — khách chưa chốt, đổi số này khi cần
 const MAX_IMAGES = 10;
 
 export default function AdminDashboardPage() {
+  // Danh mục lấy từ Firebase (admin thêm/xóa được ở trang Danh mục)
+  const categoryGroups = useCategoryGroups();
+  const allCategories = categoryGroups.flatMap((g) => g.items);
+
   const [items, setItems] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Product | null>(null);
