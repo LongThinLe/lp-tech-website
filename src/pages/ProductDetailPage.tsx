@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import type { ReactNode } from "react";
 import { useParams, Link, Navigate } from "react-router-dom";
 import { FiCheck, FiPhone, FiShare2, FiCheckCircle, FiShield, FiChevronLeft, FiChevronRight, FiChevronDown } from "react-icons/fi";
 import { getBrands } from "../services/brandService";
@@ -8,73 +7,13 @@ import { getProducts } from "../services/productService";
 import { useCategoryGroups } from "../services/categoryService";
 import type { Product } from "../types";
 import ProductInfoTabs from "../components/ProductInfoTabs";
+import RichContent from "../components/RichContent";
 
 const galleryTones = ["#DCEBE2", "#CDE4D8", "#E4F1EA", "#EEF4F0"];
 
 // Số sản phẩm liên quan hiện sẵn, và số mở thêm mỗi lần bấm "Xem thêm"
 const RELATED_PREVIEW = 8;
 const RELATED_STEP = 8;
-
-// Biến link (http://, https://, www.) trong một dòng chữ thành link bấm được
-function linkify(text: string): ReactNode[] {
-  const parts = text.split(/((?:https?:\/\/|www\.)[^\s]+)/g);
-  return parts.map((part, i) => {
-    if (i % 2 === 0) return part;
-    // Bỏ dấu câu dính cuối link (vd: "...makita." hoặc "...makita),")
-    const m = part.match(/^(.*?)([.,;:!?)\]]*)$/);
-    const url = m ? m[1] : part;
-    const tail = m ? m[2] : "";
-    const href = url.startsWith("www.") ? `https://${url}` : url;
-    return (
-      <span key={i}>
-        <a
-          href={href}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ color: "#2F8F76", textDecoration: "underline", wordBreak: "break-all" }}
-        >
-          {url}
-        </a>
-        {tail}
-      </span>
-    );
-  });
-}
-
-// Hiển thị nội dung nhiều dòng theo đúng cách khách gõ:
-//  - dòng thường: chữ trơn, không dấu
-//  - dòng bắt đầu bằng "-": ý phụ, thụt vào, giữ gạch ngang
-//  - dòng bắt đầu bằng "•" hoặc "*": giữ đúng một dấu "•"
-function FormattedLines({ lines }: { lines: string[] }) {
-  return (
-    <div style={{ lineHeight: 1.6 }}>
-      {lines.map((raw, i) => {
-        const line = raw.trim();
-        if (!line) return <div key={i} style={{ height: ".6rem" }} />;
-
-        if (/^[-–—]\s*/.test(line)) {
-          const rest = line.replace(/^[-–—]\s*/, "");
-          return (
-            <div key={i} style={{ paddingLeft: "1.1rem", textIndent: "-0.8rem" }}>
-              – {linkify(rest)}
-            </div>
-          );
-        }
-
-        if (/^[•*]\s*/.test(line)) {
-          const rest = line.replace(/^[•*]\s*/, "");
-          return (
-            <div key={i} style={{ paddingLeft: "1rem", textIndent: "-0.8rem" }}>
-              • {linkify(rest)}
-            </div>
-          );
-        }
-
-        return <div key={i}>{linkify(line)}</div>;
-      })}
-    </div>
-  );
-}
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -329,15 +268,15 @@ export default function ProductDetailPage() {
               tabs={[
                 {
                   label: "Thông số kỹ thuật",
-                  content: <FormattedLines lines={p.specs} />,
+                  content: <RichContent lines={p.specs} />,
                 },
                 {
                   label: "Hướng dẫn sử dụng",
-                  content: <FormattedLines lines={usageText.split("\n")} />,
+                  content: <RichContent text={usageText} />,
                 },
                 {
                   label: "Chứng nhận chất lượng",
-                  content: <FormattedLines lines={certText.split("\n")} />,
+                  content: <RichContent text={certText} />,
                 },
               ]}
             />

@@ -7,6 +7,8 @@ import { getLeads } from "../services/leadService";
 import { uploadProductImage } from "../services/storageService";
 import { toSlug, uniqueSlug } from "../utils/slug";
 import type { Product } from "../types";
+import RichTextEditor from "../components/RichTextEditor";
+import { looksLikeHtml, isEmptyRich } from "../utils/richText";
 import {
   FiTag, FiLayers, FiBriefcase, FiMessageSquare,
   FiPlus, FiEdit2, FiTrash2, FiX, FiSearch, FiChevronDown, FiCheckCircle,
@@ -129,7 +131,8 @@ export default function AdminDashboardPage() {
       slug: p.slug ?? "",
       images: (p.images ?? []).filter(Boolean),
     });
-    setSpecsText((p.specs ?? []).join("\n"));
+    const sp = p.specs ?? [];
+    setSpecsText(sp.length === 1 && looksLikeHtml(sp[0]) ? sp[0] : sp.join("\n"));
     setShowForm(true);
   };
 
@@ -192,11 +195,18 @@ export default function AdminDashboardPage() {
       .filter(Boolean) as string[];
     const slug = uniqueSlug(toSlug((editing.slug ?? "").trim() || editing.name), takenSlugs);
 
-    // Chuyển ô "Thông số kỹ thuật" (nhiều dòng) thành mảng, mỗi dòng 1 phần tử
+    // Thông số kỹ thuật: nếu đã dùng khung soạn thảo (có định dạng) thì lưu nguyên khối HTML;
+    // nếu còn là chữ thuần cũ chưa sửa thì giữ cách lưu theo từng dòng như trước
     const finalEditing: Product = {
       ...editing,
       slug,
-      specs: specsText.split("\n").map((s) => s.trim()).filter(Boolean),
+      specs: isEmptyRich(specsText)
+        ? []
+        : looksLikeHtml(specsText)
+          ? [specsText]
+          : specsText.split("\n").map((s) => s.trim()).filter(Boolean),
+      usageGuide: isEmptyRich(editing.usageGuide ?? "") ? "" : editing.usageGuide,
+      certification: isEmptyRich(editing.certification ?? "") ? "" : editing.certification,
     };
 
     const isNew = !items.some((p) => p.id === finalEditing.id);
@@ -730,33 +740,33 @@ export default function AdminDashboardPage() {
                     </div>
 
                     <label className="form-label" style={labelStyle}>Thông số kỹ thuật</label>
-                    <textarea
-                      className="form-control mb-1"
-                      style={{ borderColor: "#E1E9E3", borderRadius: 10, fontSize: ".82rem", minHeight: 110 }}
-                      placeholder={"Độ co giãn cao\nChống ẩm, chống rách\nDùng cho pallet hàng hoá"}
+                    <RichTextEditor
+                      key={`specs-${editing.id}`}
                       value={specsText}
-                      onChange={(e) => setSpecsText(e.target.value)}
+                      onChange={setSpecsText}
+                      minHeight={110}
                     />
-                    <div className="mb-3" style={{ fontSize: ".7rem", color: "#96A0A8" }}>
-                      Mỗi dòng là 1 gạch đầu dòng, xuống dòng để thêm ý mới.
+                    <div className="mb-3 mt-1" style={{ fontSize: ".7rem", color: "#96A0A8" }}>
+                      Bôi đen chữ rồi dùng thanh công cụ để in đậm, in nghiêng, gạch chân, đổi màu, cỡ chữ, font chữ.
+                      Dòng bắt đầu bằng dấu "-" sẽ hiện thụt vào như ý phụ. Link dán vào sẽ tự bấm được.
                     </div>
 
                     <label className="form-label" style={labelStyle}>Hướng dẫn sử dụng</label>
-                    <textarea
-                      className="form-control mb-3"
-                      style={{ borderColor: "#E1E9E3", borderRadius: 10, fontSize: ".82rem", minHeight: 100 }}
-                      placeholder="VD: Bảo quản nơi khô ráo, tránh ánh nắng trực tiếp..."
-                      value={editing.usageGuide ?? ""}
-                      onChange={(e) => setEditing({ ...editing, usageGuide: e.target.value })}
-                    />
+                    <div className="mb-3">
+                      <RichTextEditor
+                        key={`usage-${editing.id}`}
+                        value={editing.usageGuide ?? ""}
+                        onChange={(html) => setEditing((prev) => (prev ? { ...prev, usageGuide: html } : prev))}
+                        minHeight={100}
+                      />
+                    </div>
 
                     <label className="form-label" style={labelStyle}>Chứng nhận chất lượng</label>
-                    <textarea
-                      className="form-control"
-                      style={{ borderColor: "#E1E9E3", borderRadius: 10, fontSize: ".82rem", minHeight: 100 }}
-                      placeholder="VD: Đạt chuẩn ISO 9001, có đầy đủ CO/CQ kèm lô hàng"
+                    <RichTextEditor
+                      key={`cert-${editing.id}`}
                       value={editing.certification ?? ""}
-                      onChange={(e) => setEditing({ ...editing, certification: e.target.value })}
+                      onChange={(html) => setEditing((prev) => (prev ? { ...prev, certification: html } : prev))}
+                      minHeight={100}
                     />
                   </div>
                 </div>
