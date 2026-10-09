@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { FiArrowRight, FiHeadphones, FiUsers, FiTruck } from "react-icons/fi";
+import { FiArrowRight, FiHeadphones, FiUsers, FiTruck, FiChevronDown, FiChevronUp } from "react-icons/fi";
 import { useCategoryGroups } from "../services/categoryService";
 
 const heroImages = [
@@ -19,9 +19,13 @@ const brandLogos = [
   { src: "/brand-daiduong.png", alt: "Băng Keo Đại Dương" },
 ];
 
+// Số danh mục lớn hiện sẵn (1 hàng trên desktop). Nhiều hơn sẽ có nút "Xem thêm"
+const CATEGORY_PREVIEW = 6;
+
 export default function Hero() {
   const categoryGroups = useCategoryGroups();
   const [current, setCurrent] = useState(0);
+  const [showAllCats, setShowAllCats] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -30,8 +34,23 @@ export default function Hero() {
     return () => clearInterval(timer);
   }, []);
 
+  const hiddenCount = Math.max(0, categoryGroups.length - CATEGORY_PREVIEW);
+  const visibleGroups = showAllCats ? categoryGroups : categoryGroups.slice(0, CATEGORY_PREVIEW);
+
   return (
     <>
+      <style>{`
+        @keyframes catFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+        .cat-more-btn {
+          display: inline-flex; align-items: center; gap: 8px;
+          padding: 10px 24px; border-radius: 999px;
+          border: 1.5px solid #2F8F76; background: #fff; color: #22684F;
+          font-weight: 600; font-size: .9rem; cursor: pointer;
+          transition: background .2s ease, color .2s ease, box-shadow .2s ease;
+        }
+        .cat-more-btn:hover { background: #2F8F76; color: #fff; box-shadow: 0 8px 20px rgba(47,143,118,.25); }
+      `}</style>
+
       <section className="py-5 position-relative overflow-hidden">
         <div className="position-absolute" style={{ inset: 0, zIndex: 0 }}>
           {heroImages.map((src, i) => (
@@ -154,17 +173,32 @@ export default function Hero() {
             Danh mục sản phẩm
           </h2>
           <div className="row g-3">
-            {categoryGroups.map((group) =>
-              group.items.map((item, idx) => (
-                <div className="col-6 col-md-4 col-lg-2" key={item.id} data-aos="fade-up" data-aos-delay={idx * 60}>
-                  <Link to={`/san-pham?cat=${item.id}`} className="cat-block">
-                    <div className="cat-block__label">{item.name}</div>
-                    <div className="cat-block__count">{group.name}</div>
-                  </Link>
-                </div>
-              ))
-            )}
+            {visibleGroups.map((group, idx) => (
+              <div
+                className="col-6 col-md-4 col-lg-2"
+                key={group.id}
+                style={idx >= CATEGORY_PREVIEW ? { animation: `catFadeIn .45s ease ${(idx - CATEGORY_PREVIEW) * 60}ms both` } : undefined}
+                {...(idx < CATEGORY_PREVIEW ? { "data-aos": "fade-up", "data-aos-delay": idx * 60 } : {})}
+              >
+                <Link to={`/san-pham?nhom=${group.id}`} className="cat-block">
+                  <div className="cat-block__label">{group.name}</div>
+                  <div className="cat-block__count">{group.items.length} danh mục</div>
+                </Link>
+              </div>
+            ))}
           </div>
+
+          {hiddenCount > 0 && (
+            <div className="text-center mt-4">
+              <button type="button" className="cat-more-btn" onClick={() => setShowAllCats((v) => !v)}>
+                {showAllCats ? (
+                  <>Thu gọn <FiChevronUp /></>
+                ) : (
+                  <>Xem thêm {hiddenCount} danh mục <FiChevronDown /></>
+                )}
+              </button>
+            </div>
+          )}
         </div>
       </section>
     </>

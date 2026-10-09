@@ -12,6 +12,7 @@ export default function ProductsPage() {
   const categoryGroups = useCategoryGroups();
   const [searchParams, setSearchParams] = useSearchParams();
   const activeCat = searchParams.get("cat");
+  const activeGroup = searchParams.get("nhom");
   const activeBrand = searchParams.get("brand");
   const query = searchParams.get("q") ?? "";
 
@@ -32,7 +33,15 @@ export default function ProductsPage() {
       .catch((err) => console.error("Lỗi tải hãng phân phối từ Firebase:", err));
   }, []);
 
-  let filtered = activeCat ? products.filter((p) => p.categoryId === activeCat) : products;
+  const activeGroupObj = activeGroup ? categoryGroups.find((g) => g.id === activeGroup) : undefined;
+
+  let filtered = products;
+  if (activeCat) {
+    filtered = filtered.filter((p) => p.categoryId === activeCat);
+  } else if (activeGroupObj) {
+    const ids = new Set(activeGroupObj.items.map((i) => i.id));
+    filtered = filtered.filter((p) => ids.has(p.categoryId));
+  }
   if (activeBrand) {
     filtered = filtered.filter((p) => p.brandId === activeBrand);
   }
@@ -45,15 +54,26 @@ export default function ProductsPage() {
     ? categoryGroups.flatMap((g) => g.items).find((i) => i.id === activeCat)?.name
     : null;
 
-  const heading = query.trim() ? `Kết quả cho "${query.trim()}"` : activeCatName ?? "Tất cả sản phẩm";
+  const heading = query.trim()
+    ? `Kết quả cho "${query.trim()}"`
+    : activeCatName ?? activeGroupObj?.name ?? "Tất cả sản phẩm";
 
-  const selectCategory = (id: string | null) => {
-    const next: Record<string, string> = {};
-    if (id) next.cat = id;
+  const buildParams = (extra: Record<string, string>) => {
+    const next: Record<string, string> = { ...extra };
     if (activeBrand) next.brand = activeBrand;
     if (query.trim()) next.q = query.trim();
-    setSearchParams(next);
+    return next;
   };
+
+  const selectCategory = (id: string | null) => {
+    setSearchParams(buildParams(id ? { cat: id } : {}));
+  };
+
+  const selectGroup = (id: string) => {
+    setSearchParams(buildParams({ nhom: id }));
+  };
+
+  const noFilter = !activeCat && !activeGroupObj;
 
   return (
     <section className="py-5 bg-white" style={{ minHeight: "70vh" }}>
@@ -77,13 +97,32 @@ export default function ProductsPage() {
               style={{
                 fontSize: ".82rem",
                 whiteSpace: "nowrap",
-                color: !activeCat ? "#22684F" : "#5B6B76",
-                background: !activeCat ? "#E4F1EA" : "#F1F1EE",
-                fontWeight: !activeCat ? 600 : 400,
+                color: noFilter ? "#22684F" : "#5B6B76",
+                background: noFilter ? "#E4F1EA" : "#F1F1EE",
+                fontWeight: noFilter ? 600 : 400,
               }}
             >
               Tất cả
             </button>
+            {categoryGroups.map((group) => {
+              const isActive = !activeCat && activeGroup === group.id;
+              return (
+                <button
+                  key={group.id}
+                  onClick={() => selectGroup(group.id)}
+                  className="flex-shrink-0 border-0 rounded-pill px-3 py-2"
+                  style={{
+                    fontSize: ".82rem",
+                    whiteSpace: "nowrap",
+                    color: isActive ? "#22684F" : "#223028",
+                    background: isActive ? "#E4F1EA" : "#F1F1EE",
+                    fontWeight: 600,
+                  }}
+                >
+                  {group.name}
+                </button>
+              );
+            })}
             {categoryGroups.flatMap((g) => g.items).map((item) => {
               const isActive = activeCat === item.id;
               return (
@@ -114,41 +153,52 @@ export default function ProductsPage() {
                 className="d-block w-100 text-start border-0 bg-transparent text-decoration-none py-1 px-2 rounded-2 mb-3 fw-semibold"
                 style={{
                   fontSize: ".85rem",
-                  color: !activeCat ? "#22684F" : "#223028",
-                  background: !activeCat ? "#E4F1EA" : "transparent",
+                  color: noFilter ? "#22684F" : "#223028",
+                  background: noFilter ? "#E4F1EA" : "transparent",
                 }}
               >
                 Tất cả sản phẩm
               </button>
 
-              {categoryGroups.map((group) => (
-                <div key={group.id} className="mb-3">
-                  <div className="fw-semibold mb-2" style={{ fontSize: ".85rem", color: "#223028" }}>
-                    {group.name}
+              {categoryGroups.map((group) => {
+                const groupActive = !activeCat && activeGroup === group.id;
+                return (
+                  <div key={group.id} className="mb-3">
+                    <button
+                      onClick={() => selectGroup(group.id)}
+                      className="d-block w-100 text-start border-0 py-1 px-2 rounded-2 mb-1 fw-semibold"
+                      style={{
+                        fontSize: ".85rem",
+                        color: groupActive ? "#22684F" : "#223028",
+                        background: groupActive ? "#E4F1EA" : "transparent",
+                      }}
+                    >
+                      {group.name}
+                    </button>
+                    <ul className="list-unstyled d-flex flex-column gap-1 mb-0">
+                      {group.items.map((item) => {
+                        const isActive = activeCat === item.id;
+                        return (
+                          <li key={item.id}>
+                            <button
+                              onClick={() => selectCategory(item.id)}
+                              className="d-block w-100 text-start border-0 text-decoration-none py-1 px-2 rounded-2"
+                              style={{
+                                fontSize: ".85rem",
+                                color: isActive ? "#22684F" : "#5B6B76",
+                                background: isActive ? "#E4F1EA" : "transparent",
+                                fontWeight: isActive ? 600 : 400,
+                              }}
+                            >
+                              {item.name}
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
                   </div>
-                  <ul className="list-unstyled d-flex flex-column gap-1 mb-0">
-                    {group.items.map((item) => {
-                      const isActive = activeCat === item.id;
-                      return (
-                        <li key={item.id}>
-                          <button
-                            onClick={() => selectCategory(item.id)}
-                            className="d-block w-100 text-start border-0 text-decoration-none py-1 px-2 rounded-2"
-                            style={{
-                              fontSize: ".85rem",
-                              color: isActive ? "#22684F" : "#5B6B76",
-                              background: isActive ? "#E4F1EA" : "transparent",
-                              fontWeight: isActive ? 600 : 400,
-                            }}
-                          >
-                            {item.name}
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
