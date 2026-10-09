@@ -19,13 +19,15 @@ const brandLogos = [
   { src: "/brand-daiduong.png", alt: "Băng Keo Đại Dương" },
 ];
 
-// Số danh mục lớn hiện sẵn (1 hàng trên desktop). Nhiều hơn sẽ có nút "Xem thêm"
+// Số danh mục lớn hiện sẵn, và số thẻ mở thêm mỗi lần bấm "Xem thêm".
+// Dùng số chia hết cho 6, 3, 2 (số thẻ mỗi hàng) để hàng luôn đầy.
 const CATEGORY_PREVIEW = 6;
+const CATEGORY_STEP = 6;
 
 export default function Hero() {
   const categoryGroups = useCategoryGroups();
   const [current, setCurrent] = useState(0);
-  const [showAllCats, setShowAllCats] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(CATEGORY_PREVIEW);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -34,8 +36,9 @@ export default function Hero() {
     return () => clearInterval(timer);
   }, []);
 
-  const hiddenCount = Math.max(0, categoryGroups.length - CATEGORY_PREVIEW);
-  const visibleGroups = showAllCats ? categoryGroups : categoryGroups.slice(0, CATEGORY_PREVIEW);
+  const hiddenCount = Math.max(0, categoryGroups.length - visibleCount);
+  const visibleGroups = categoryGroups.slice(0, visibleCount);
+  const expanded = visibleCount > CATEGORY_PREVIEW;
 
   return (
     <>
@@ -177,7 +180,7 @@ export default function Hero() {
               <div
                 className="col-6 col-md-4 col-lg-2"
                 key={group.id}
-                style={idx >= CATEGORY_PREVIEW ? { animation: `catFadeIn .45s ease ${(idx - CATEGORY_PREVIEW) * 60}ms both` } : undefined}
+                style={idx >= CATEGORY_PREVIEW ? { animation: `catFadeIn .45s ease ${(idx % CATEGORY_STEP) * 60}ms both` } : undefined}
                 {...(idx < CATEGORY_PREVIEW ? { "data-aos": "fade-up", "data-aos-delay": idx * 60 } : {})}
               >
                 <Link to={`/san-pham?nhom=${group.id}`} className="cat-block">
@@ -188,15 +191,18 @@ export default function Hero() {
             ))}
           </div>
 
-          {hiddenCount > 0 && (
-            <div className="text-center mt-4">
-              <button type="button" className="cat-more-btn" onClick={() => setShowAllCats((v) => !v)}>
-                {showAllCats ? (
-                  <>Thu gọn <FiChevronUp /></>
-                ) : (
-                  <>Xem thêm {hiddenCount} danh mục <FiChevronDown /></>
-                )}
-              </button>
+          {(hiddenCount > 0 || expanded) && (
+            <div className="text-center mt-4 d-flex justify-content-center gap-3 flex-wrap">
+              {hiddenCount > 0 && (
+                <button type="button" className="cat-more-btn" onClick={() => setVisibleCount((n) => n + CATEGORY_STEP)}>
+                  Xem thêm {Math.min(CATEGORY_STEP, hiddenCount)} danh mục <FiChevronDown />
+                </button>
+              )}
+              {expanded && (
+                <button type="button" className="cat-more-btn" onClick={() => setVisibleCount(CATEGORY_PREVIEW)}>
+                  Thu gọn <FiChevronUp />
+                </button>
+              )}
             </div>
           )}
         </div>
