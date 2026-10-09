@@ -46,7 +46,7 @@ export default function Header() {
       <style>{`
         .brand-wrap { gap: 12px; margin-right: 0; }
         .brand-logo { height: 52px; }
-        .brand-divider { width: 1px; height: 34px; background: #D5DED8; flex-shrink: 0; }
+        
         .brand-name {
           font-weight: 800; color: #22684F; text-transform: uppercase;
           letter-spacing: .8px; line-height: 1.3; font-size: .82rem;
@@ -90,7 +90,7 @@ export default function Header() {
               alt="LP Tech"
               className="brand-logo"
             />
-            <span className="brand-divider" aria-hidden="true" />
+            
             <span className="brand-name">
               CÔNG TY TNHH<br />TM LP TECH
             </span>
