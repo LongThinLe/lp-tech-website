@@ -43,6 +43,29 @@ export default function Header() {
 
   return (
     <header className="sticky-top">
+      <style>{`
+        .brand-wrap { gap: 12px; margin-right: 0; }
+        .brand-logo { height: 52px; }
+        .brand-divider { width: 1px; height: 34px; background: #D5DED8; flex-shrink: 0; }
+        .brand-name {
+          font-weight: 800; color: #22684F; text-transform: uppercase;
+          letter-spacing: .8px; line-height: 1.3; font-size: .82rem;
+          border-left: 3px solid #2F8F76; padding-left: 10px; white-space: nowrap;
+        }
+        @media (min-width: 992px) and (max-width: 1199.98px) {
+          .brand-name { font-size: .68rem; letter-spacing: .4px; padding-left: 8px; }
+          .brand-logo { height: 46px; }
+        }
+        @media (max-width: 575.98px) {
+          .brand-wrap { gap: 8px; }
+          .brand-logo { height: 40px; }
+          .brand-name { font-size: .62rem; letter-spacing: .4px; padding-left: 7px; border-left-width: 2px; }
+        }
+        @media (max-width: 359.98px) {
+          .brand-name { font-size: .55rem; }
+        }
+      `}</style>
+
       <div className="top-bar py-2">
         <div className="container d-flex justify-content-between align-items-center">
           <div className="d-none d-md-flex gap-4">
@@ -61,8 +84,16 @@ export default function Header() {
 
       <nav className="navbar navbar-expand-lg bg-white border-bottom py-3">
         <div className="container">
-          <Link to="/" className="navbar-brand d-flex align-items-center">
-            <img src={company.logoHeader || "/logo-icon.png"} alt="LP Tech" height={52} />
+          <Link to="/" className="navbar-brand d-flex align-items-center brand-wrap">
+            <img
+              src={company.logoHeader || "/logo-icon.png"}
+              alt="LP Tech"
+              className="brand-logo"
+            />
+            <span className="brand-divider" aria-hidden="true" />
+            <span className="brand-name">
+              CÔNG TY TNHH<br />TM LP TECH
+            </span>
           </Link>
 
           <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
