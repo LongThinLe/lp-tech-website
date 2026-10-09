@@ -1,20 +1,89 @@
 import { useState, useEffect } from "react";
+import type { ReactNode } from "react";
 import { useParams, Link, Navigate } from "react-router-dom";
-import { FiCheck, FiPhone, FiShare2, FiCheckCircle, FiShield, FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import { FiCheck, FiPhone, FiShare2, FiCheckCircle, FiShield, FiChevronLeft, FiChevronRight, FiChevronDown } from "react-icons/fi";
 import { getBrands } from "../services/brandService";
 import type { Brand } from "../services/brandService";
 import { getProducts } from "../services/productService";
+import { useCategoryGroups } from "../services/categoryService";
 import type { Product } from "../types";
 import ProductInfoTabs from "../components/ProductInfoTabs";
 
 const galleryTones = ["#DCEBE2", "#CDE4D8", "#E4F1EA", "#EEF4F0"];
 
+// Số sản phẩm liên quan hiện sẵn, và số mở thêm mỗi lần bấm "Xem thêm"
+const RELATED_PREVIEW = 8;
+const RELATED_STEP = 8;
+
+// Biến link (http://, https://, www.) trong một dòng chữ thành link bấm được
+function linkify(text: string): ReactNode[] {
+  const parts = text.split(/((?:https?:\/\/|www\.)[^\s]+)/g);
+  return parts.map((part, i) => {
+    if (i % 2 === 0) return part;
+    // Bỏ dấu câu dính cuối link (vd: "...makita." hoặc "...makita),")
+    const m = part.match(/^(.*?)([.,;:!?)\]]*)$/);
+    const url = m ? m[1] : part;
+    const tail = m ? m[2] : "";
+    const href = url.startsWith("www.") ? `https://${url}` : url;
+    return (
+      <span key={i}>
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: "#2F8F76", textDecoration: "underline", wordBreak: "break-all" }}
+        >
+          {url}
+        </a>
+        {tail}
+      </span>
+    );
+  });
+}
+
+// Hiển thị nội dung nhiều dòng theo đúng cách khách gõ:
+//  - dòng thường: chữ trơn, không dấu
+//  - dòng bắt đầu bằng "-": ý phụ, thụt vào, giữ gạch ngang
+//  - dòng bắt đầu bằng "•" hoặc "*": giữ đúng một dấu "•"
+function FormattedLines({ lines }: { lines: string[] }) {
+  return (
+    <div style={{ lineHeight: 1.6 }}>
+      {lines.map((raw, i) => {
+        const line = raw.trim();
+        if (!line) return <div key={i} style={{ height: ".6rem" }} />;
+
+        if (/^[-–—]\s*/.test(line)) {
+          const rest = line.replace(/^[-–—]\s*/, "");
+          return (
+            <div key={i} style={{ paddingLeft: "1.1rem", textIndent: "-0.8rem" }}>
+              – {linkify(rest)}
+            </div>
+          );
+        }
+
+        if (/^[•*]\s*/.test(line)) {
+          const rest = line.replace(/^[•*]\s*/, "");
+          return (
+            <div key={i} style={{ paddingLeft: "1rem", textIndent: "-0.8rem" }}>
+              • {linkify(rest)}
+            </div>
+          );
+        }
+
+        return <div key={i}>{linkify(line)}</div>;
+      })}
+    </div>
+  );
+}
+
 export default function ProductDetailPage() {
   const { id } = useParams();
+  const categoryGroups = useCategoryGroups();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeImg, setActiveImg] = useState(0);
   const [copied, setCopied] = useState(false);
+  const [relatedCount, setRelatedCount] = useState(RELATED_PREVIEW);
 
   useEffect(() => {
     getProducts()
@@ -29,6 +98,12 @@ export default function ProductDetailPage() {
       .then((data) => setBrands(data))
       .catch((err) => console.error("Lỗi tải hãng phân phối từ Firebase:", err));
   }, []);
+
+  // Sang sản phẩm khác thì đặt lại ảnh đang xem và số sản phẩm liên quan
+  useEffect(() => {
+    setActiveImg(0);
+    setRelatedCount(RELATED_PREVIEW);
+  }, [id]);
 
   if (loading) {
     return (
@@ -45,30 +120,42 @@ export default function ProductDetailPage() {
   if (p.slug && id !== p.slug) return <Navigate to={`/san-pham/${p.slug}`} replace />;
 
   const brand = brands.find((b) => b.id === p.brandId);
-  // "Liên quan" đúng nghĩa — ưu tiên cùng danh mục trước, thiếu thì bù bằng cùng hãng,
-  // vẫn thiếu nữa mới lấy bất kỳ sản phẩm khác (để luôn đủ 3 sản phẩm nếu database có đủ)
-  const sameCategory = products.filter((prod) => prod.id !== p.id && prod.categoryId === p.categoryId);
-  // Chỉ so sánh hãng khi sản phẩm này CÓ hãng (brandId rỗng = không có hãng)
-  const sameBrandOnly = p.brandId
-    ? products.filter(
-      (prod) => prod.id !== p.id && prod.brandId === p.brandId && prod.categoryId !== p.categoryId
-    )
-    : [];
-  const others = products.filter(
-    (prod) =>
-      prod.id !== p.id &&
-      prod.categoryId !== p.categoryId &&
-      !sameBrandOnly.some((s) => s.id === prod.id)
-  );
-  const related = [...sameCategory, ...sameBrandOnly, ...others].slice(0, 3);
+
+  // "Liên quan": TẤT CẢ sản phẩm cùng danh mục cấp 1 (nhóm lớn) với sản phẩm này.
+  // Nếu không tìm thấy nhóm lớn, lùi về cùng danh mục con.
+  const parentGroup = categoryGroups.find((g) => g.items.some((i) => i.id === p.categoryId));
+  const groupCategoryIds = new Set(parentGroup ? parentGroup.items.map((i) => i.id) : [p.categoryId]);
+  const related = products.filter((prod) => prod.id !== p.id && groupCategoryIds.has(prod.categoryId));
+  const visibleRelated = related.slice(0, relatedCount);
+  const relatedHidden = Math.max(0, related.length - relatedCount);
+  const relatedExpanded = relatedCount > RELATED_PREVIEW;
 
   const allImages = [p.image, ...(p.images ?? [])].filter(Boolean) as string[];
 
   const prevImage = () => setActiveImg((i) => (i - 1 + allImages.length) % allImages.length);
   const nextImage = () => setActiveImg((i) => (i + 1) % allImages.length);
 
+  const usageText = p.usageGuide?.trim()
+    ? p.usageGuide
+    : "Liên hệ đội ngũ kỹ thuật LP Tech để được hướng dẫn cụ thể theo điều kiện sử dụng thực tế của bạn.";
+  const certText = p.certification?.trim()
+    ? p.certification
+    : "Liên hệ để nhận đầy đủ chứng từ CO/CQ kèm theo lô hàng khi đặt mua.";
+
   return (
     <section className="py-5 bg-white" style={{ minHeight: "70vh" }}>
+      <style>{`
+        @keyframes relFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+        .rel-more-btn {
+          display: inline-flex; align-items: center; gap: 8px;
+          padding: 10px 24px; border-radius: 999px;
+          border: 1.5px solid #2F8F76; background: #fff; color: #22684F;
+          font-weight: 600; font-size: .9rem; cursor: pointer;
+          transition: background .2s ease, color .2s ease, box-shadow .2s ease;
+        }
+        .rel-more-btn:hover { background: #2F8F76; color: #fff; box-shadow: 0 8px 20px rgba(47,143,118,.25); }
+      `}</style>
+
       <div className="container">
         <div style={{ fontSize: ".82rem", color: "#96A0A8" }} className="mb-4" data-aos="fade-up">
           <Link to="/" style={{ color: "inherit", textDecoration: "none" }}>Trang chủ</Link> /{" "}
@@ -168,8 +255,6 @@ export default function ProductDetailPage() {
               ))}
             </div>
 
-
-
             <div className="d-flex gap-3 mb-4 align-items-center">
               <Link to="/lien-he" className="btn btn-accent-solid d-inline-flex align-items-center gap-2">
                 <FiPhone /> Yêu cầu báo giá
@@ -244,23 +329,15 @@ export default function ProductDetailPage() {
               tabs={[
                 {
                   label: "Thông số kỹ thuật",
-                  content: (
-                    <ul className="list-unstyled mb-0">
-                      {p.specs.map((s) => <li key={s}>• {s}</li>)}
-                    </ul>
-                  ),
+                  content: <FormattedLines lines={p.specs} />,
                 },
                 {
                   label: "Hướng dẫn sử dụng",
-                  content: p.usageGuide?.trim()
-                    ? p.usageGuide
-                    : "Liên hệ đội ngũ kỹ thuật LP Tech để được hướng dẫn cụ thể theo điều kiện sử dụng thực tế của bạn.",
+                  content: <FormattedLines lines={usageText.split("\n")} />,
                 },
                 {
                   label: "Chứng nhận chất lượng",
-                  content: p.certification?.trim()
-                    ? p.certification
-                    : "Liên hệ để nhận đầy đủ chứng từ CO/CQ kèm theo lô hàng khi đặt mua.",
+                  content: <FormattedLines lines={certText.split("\n")} />,
                 },
               ]}
             />
@@ -273,10 +350,16 @@ export default function ProductDetailPage() {
               Sản phẩm liên quan
             </h2>
             <div className="row g-4">
-              {related.map((rp, idx) => {
+              {visibleRelated.map((rp, idx) => {
                 const rBrand = brands.find((b) => b.id === rp.brandId);
+                const isExtra = idx >= RELATED_PREVIEW;
                 return (
-                  <div className="col-6 col-lg-3" key={rp.id} data-aos="fade-up" data-aos-delay={idx * 80}>
+                  <div
+                    className="col-6 col-lg-3"
+                    key={rp.id}
+                    style={isExtra ? { animation: `relFadeIn .45s ease ${(idx % RELATED_STEP) * 50}ms both` } : undefined}
+                    {...(!isExtra ? { "data-aos": "fade-up", "data-aos-delay": idx * 80 } : {})}
+                  >
                     <Link
                       to={`/san-pham/${rp.slug || rp.id}`}
                       className="bg-white rounded-4 p-3 h-100 product-card d-block text-decoration-none"
@@ -317,6 +400,21 @@ export default function ProductDetailPage() {
                 );
               })}
             </div>
+
+            {(relatedHidden > 0 || relatedExpanded) && (
+              <div className="text-center mt-4 d-flex justify-content-center gap-3 flex-wrap">
+                {relatedHidden > 0 && (
+                  <button type="button" className="rel-more-btn" onClick={() => setRelatedCount((n) => n + RELATED_STEP)}>
+                    Xem thêm {Math.min(RELATED_STEP, relatedHidden)} sản phẩm <FiChevronDown />
+                  </button>
+                )}
+                {relatedExpanded && (
+                  <button type="button" className="rel-more-btn" onClick={() => setRelatedCount(RELATED_PREVIEW)}>
+                    Thu gọn
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
