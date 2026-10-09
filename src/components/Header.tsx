@@ -46,7 +46,7 @@ export default function Header() {
       <style>{`
         .brand-wrap { gap: 12px; margin-right: 0; }
         .brand-logo { height: 52px; }
-        
+
         .brand-name {
           font-weight: 800; color: #22684F; text-transform: uppercase;
           letter-spacing: .8px; line-height: 1.3; font-size: .82rem;
@@ -90,7 +90,7 @@ export default function Header() {
               alt="LP Tech"
               className="brand-logo"
             />
-            
+
             <span className="brand-name">
               CÔNG TY TNHH<br />TM LP TECH
             </span>
@@ -119,16 +119,18 @@ export default function Header() {
                 </Link>
 
                 {menuOpen && (
-                  <div className="position-absolute d-flex" style={{ top: "100%", left: 0, zIndex: 1000 }}>
+                  <div className="position-absolute d-flex" style={{ top: "100%", left: 0, zIndex: 1000, alignItems: "flex-start" }}>
                     <div
                       className="bg-white rounded-3 p-2"
                       style={{ minWidth: 230, border: "1px solid #E1E9E3", boxShadow: "0 16px 40px rgba(0,0,0,.12)" }}
                     >
                       {categoryGroups.map((group) => (
-                        <div
+                        <Link
                           key={group.id}
+                          to={`/san-pham?nhom=${group.id}`}
+                          onClick={closeMenu}
                           onMouseEnter={() => setHoveredCat(group.id)}
-                          className="d-flex align-items-center justify-content-between px-3 py-2 rounded-2"
+                          className="d-flex align-items-center justify-content-between px-3 py-2 rounded-2 text-decoration-none"
                           style={{
                             cursor: "pointer", fontSize: ".88rem",
                             background: hoveredCat === group.id ? "#E4F1EA" : "transparent",
@@ -138,7 +140,7 @@ export default function Header() {
                         >
                           <span className="flex-grow-1">{group.name}</span>
                           <FiChevronRight size={13} style={{ color: "#96A0A8", flexShrink: 0 }} />
-                        </div>
+                        </Link>
                       ))}
                       <div style={{ height: 1, background: "#E1E9E3", margin: "6px 8px" }} />
                       <Link
