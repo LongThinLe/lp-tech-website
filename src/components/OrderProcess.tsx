@@ -1,11 +1,11 @@
 import { FiShoppingBag, FiSend, FiCheckCircle, FiTruck, FiPhoneCall } from "react-icons/fi";
 import { SiZalo, SiShopee } from "react-icons/si";
-
-// Link gian hàng Shopee — thay bằng link thật của LP Tech.
-// (Ở mục 20 mình sẽ chuyển link này vào trang admin để khách tự sửa.)
-const SHOPEE_URL = "https://shopee.vn/";
+import { useCompanySettings } from "../hooks/useCompanySettings";
 
 export default function OrderProcess() {
+  // Link gian hàng Shopee lấy từ trang admin (Thiết lập → Thông tin công ty → Link Shopee)
+  const { shopee } = useCompanySettings();
+
   return (
     <>
       {/* Quy trình đặt hàng — 4 bước, kiểu vuông bo góc, viền mảnh */}
@@ -89,9 +89,15 @@ export default function OrderProcess() {
                 <p className="mb-3" style={{ fontSize: ".85rem", color: "#5B6B76", lineHeight: 1.6 }}>
                   Đặt mua ngay trên gian hàng Shopee của LP Tech — thanh toán an toàn, theo dõi đơn hàng dễ dàng.
                 </p>
-                <a href={SHOPEE_URL} target="_blank" rel="noreferrer" className="btn w-100 fw-semibold" style={{ background: "#F1F1EE", color: "#223028", borderRadius: 999, fontSize: ".85rem" }} >
-                  Mở Shopee
-                </a>
+                {shopee ? (
+                  <a href={shopee} target="_blank" rel="noreferrer" className="btn w-100 fw-semibold" style={{ background: "#F1F1EE", color: "#223028", borderRadius: 999, fontSize: ".85rem" }} >
+                    Mở Shopee
+                  </a>
+                ) : (
+                  <span className="btn w-100 fw-semibold disabled" style={{ background: "#F1F1EE", color: "#96A0A8", borderRadius: 999, fontSize: ".85rem" }} >
+                    Đang cập nhật
+                  </span>
+                )}
               </div>
             </div>
 
