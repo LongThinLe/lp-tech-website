@@ -1,6 +1,9 @@
-import { Link } from "react-router-dom";
-import { FiShoppingBag, FiSend, FiCheckCircle, FiTruck, FiPhoneCall, FiEdit3 } from "react-icons/fi";
-import { SiZalo } from "react-icons/si";
+import { FiShoppingBag, FiSend, FiCheckCircle, FiTruck, FiPhoneCall } from "react-icons/fi";
+import { SiZalo, SiShopee } from "react-icons/si";
+
+// Link gian hàng Shopee — thay bằng link thật của LP Tech.
+// (Ở mục 20 mình sẽ chuyển link này vào trang admin để khách tự sửa.)
+const SHOPEE_URL = "https://shopee.vn/";
 
 export default function OrderProcess() {
   return (
@@ -77,18 +80,18 @@ export default function OrderProcess() {
 
             <div className="col-md-4" data-aos="fade-up" data-aos-delay="80">
               <div className="p-4 rounded-4 h-100" style={{ border: "1.5px solid #E1E9E3" }}>
-                <div className="d-flex align-items-center justify-content-center rounded-circle mb-3" style={{ width: 52, height: 52, background: "#E4F1EA", color: "#22684F" }} >
-                  <FiEdit3 size={22} />
+                <div className="d-flex align-items-center justify-content-center rounded-circle mb-3" style={{ width: 52, height: 52, background: "#FDEDEC", color: "#EE4D2D" }} >
+                  <SiShopee size={22} />
                 </div>
                 <h3 className="h6 fw-bold mb-2" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-                  Điền form liên hệ
+                  Đặt hàng qua sàn thương mại
                 </h3>
                 <p className="mb-3" style={{ fontSize: ".85rem", color: "#5B6B76", lineHeight: 1.6 }}>
-                  Mô tả chi tiết nhu cầu, đội ngũ tư vấn sẽ phản hồi qua email/điện thoại trong 15 phút làm việc.
+                  Đặt mua ngay trên gian hàng Shopee của LP Tech — thanh toán an toàn, theo dõi đơn hàng dễ dàng.
                 </p>
-                <Link to="/lien-he" className="btn w-100 fw-semibold" style={{ background: "#F1F1EE", color: "#223028", borderRadius: 999, fontSize: ".85rem" }} >
-                  Đến form liên hệ
-                </Link>
+                <a href={SHOPEE_URL} target="_blank" rel="noreferrer" className="btn w-100 fw-semibold" style={{ background: "#F1F1EE", color: "#223028", borderRadius: 999, fontSize: ".85rem" }} >
+                  Mở Shopee
+                </a>
               </div>
             </div>
 
