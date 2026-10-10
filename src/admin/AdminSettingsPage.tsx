@@ -4,6 +4,7 @@ import {
   getCompanySettings,
   saveCompanySettings,
   extractMapSrc,
+  normalizeLink,
   mapEmbedSrc,
   mapOpenLink,
 } from "../services/settingsService";
@@ -38,6 +39,8 @@ const fields: { key: keyof CompanySettings; label: string; placeholder?: string;
   { key: "workingHours", label: "Giờ làm việc", hint: "Hiện ở thanh trên cùng của web." },
   { key: "facebook", label: "Link Facebook", placeholder: "https://www.facebook.com/...", hint: "Để trống nếu muốn ẩn biểu tượng." },
   { key: "instagram", label: "Link Instagram", placeholder: "https://www.instagram.com/...", hint: "Để trống nếu muốn ẩn biểu tượng." },
+  { key: "tiktok", label: "Link TikTok", placeholder: "https://www.tiktok.com/@...", hint: "Để trống nếu muốn ẩn biểu tượng." },
+  { key: "shopee", label: "Link Shopee", placeholder: "https://shopee.vn/...", hint: "Hiện ở chân trang và ô \"Đặt hàng qua sàn thương mại\" ở trang chủ. Để trống nếu muốn ẩn." },
   { key: "supportLine", label: "Dòng giới thiệu người tư vấn", hint: "Hiện ở khung \"Cần tư vấn đặt hàng số lượng lớn?\"" },
 ];
 
@@ -100,7 +103,14 @@ export default function AdminSettingsPage() {
     }
     setSaving(true);
     try {
-      const data: CompanySettings = { ...form, mapEmbed: mapSrc };
+      const data: CompanySettings = {
+        ...form,
+        mapEmbed: mapSrc,
+        facebook: normalizeLink(form.facebook),
+        instagram: normalizeLink(form.instagram),
+        tiktok: normalizeLink(form.tiktok),
+        shopee: normalizeLink(form.shopee),
+      };
       await saveCompanySettings(data);
       setForm(data);
       setMessage({ type: "ok", text: "Đã lưu! Web sẽ cập nhật ngay (tải lại trang để thấy)." });

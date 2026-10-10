@@ -1,9 +1,23 @@
 import { Link, useLocation } from "react-router-dom";
 import { FiPhone, FiMail, FiMapPin } from "react-icons/fi";
-import { FaFacebookF, FaInstagram } from "react-icons/fa";
-import { SiGmail, SiZalo } from "react-icons/si";
+import { FaFacebookF, FaInstagram, FaTiktok } from "react-icons/fa";
+import { SiGmail, SiZalo, SiShopee } from "react-icons/si";
 import { useCompanySettings } from "../hooks/useCompanySettings";
 import { mapEmbedSrc, mapOpenLink } from "../services/settingsService";
+
+// Biểu tượng mạng xã hội: vòng tròn trắng, biểu tượng giữ màu thương hiệu
+const iconCircle = (size: number): React.CSSProperties => ({
+  width: size,
+  height: size,
+  borderRadius: "50%",
+  background: "#fff",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flexShrink: 0,
+  boxShadow: "0 2px 8px rgba(0,0,0,.18)",
+  transition: "transform .2s ease",
+});
 
 export default function Footer() {
   const { pathname } = useLocation();
@@ -51,14 +65,17 @@ export default function Footer() {
                 </span>
               </div>
 
-              <div className="d-flex gap-2 mt-4">
+              <div className="d-flex flex-wrap gap-2 mt-4">
                 {s.facebook && (
-                  <a href={s.facebook} target="_blank" rel="noreferrer" aria-label="Facebook" className="social-icon"><FaFacebookF size={21} /></a>
+                  <a href={s.facebook} target="_blank" rel="noreferrer" aria-label="Facebook" style={iconCircle(42)}><FaFacebookF size={20} color="#1877F2" /></a>
                 )}
-                <a href={`https://zalo.me/${phoneDigits}`} target="_blank" rel="noreferrer" aria-label="Zalo" className="social-icon"><SiZalo size={24} /></a>
-                <a href={`mailto:${s.email}`} aria-label="Gmail" className="social-icon"><SiGmail size={21} /></a>
+                <a href={`https://zalo.me/${phoneDigits}`} target="_blank" rel="noreferrer" aria-label="Zalo" style={iconCircle(42)}><SiZalo size={24} color="#0068FF" /></a>
+                <a href={`mailto:${s.email}`} aria-label="Gmail" style={iconCircle(42)}><SiGmail size={20} color="#EA4335" /></a>
                 {s.instagram && (
-                  <a href={s.instagram} target="_blank" rel="noreferrer" aria-label="Instagram" className="social-icon"><FaInstagram size={22} /></a>
+                  <a href={s.instagram} target="_blank" rel="noreferrer" aria-label="Instagram" style={iconCircle(42)}><FaInstagram size={22} color="#E4405F" /></a>
+                )}
+                {s.tiktok && (
+                  <a href={s.tiktok} target="_blank" rel="noreferrer" aria-label="TikTok" style={iconCircle(42)}><FaTiktok size={19} color="#000" /></a>
                 )}
               </div>
             </div>
@@ -72,14 +89,19 @@ export default function Footer() {
               </ul>
             </div>
 
-            <div className="col-6 col-lg-2">
-              <div className="fw-semibold text-white mb-3">Chính sách</div>
-              <ul className="list-unstyled d-flex flex-column gap-2" style={{ fontSize: ".875rem" }}>
-                <li><Link to="/dich-vu" className="text-decoration-none" style={{ color: "inherit" }}>Vận chuyển</Link></li>
-                <li><Link to="/dich-vu" className="text-decoration-none" style={{ color: "inherit" }}>Đổi trả</Link></li>
-                <li><Link to="/dich-vu" className="text-decoration-none" style={{ color: "inherit" }}>Bảo mật</Link></li>
-              </ul>
-            </div>
+            {s.shopee && (
+              <div className="col-6 col-lg-2">
+                <div className="fw-semibold text-white mb-3">Mua hàng online</div>
+                <ul className="list-unstyled d-flex flex-column gap-2" style={{ fontSize: ".875rem" }}>
+                  <li>
+                    <a href={s.shopee} target="_blank" rel="noreferrer" className="d-inline-flex align-items-center gap-2 text-decoration-none" style={{ color: "inherit" }}>
+                      <span style={iconCircle(30)}><SiShopee size={16} color="#EE4D2D" /></span>
+                      Gian hàng Shopee
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            )}
 
             <div className="col-lg-5">
               <div className="fw-semibold text-white mb-3">Vị trí</div>

@@ -9,6 +9,8 @@ export interface CompanySettings {
     email: string;
     facebook: string;
     instagram: string;
+    tiktok: string; // link TikTok (để trống = ẩn)
+    shopee: string; // link gian hàng Shopee (để trống = ẩn)
     supportLine: string; // dòng giới thiệu người tư vấn ở chân trang
     mapEmbed: string; // link nhúng Google Map (để trống = tự tìm theo địa chỉ)
     workingHours: string; // giờ làm việc ở thanh trên cùng
@@ -25,6 +27,8 @@ export const defaultSettings: CompanySettings = {
     email: "lptechco.ltd@gmail.com",
     facebook: "https://www.facebook.com/linh.tau.503",
     instagram: "",
+    tiktok: "",
+    shopee: "",
     supportLine: "Ms. Khánh Linh — Phụ trách kinh doanh · phản hồi trong 15 phút",
     mapEmbed: "",
     workingHours: "Thứ 2 – 7: 07:00–11:30 & 13:00–16:30",
@@ -72,3 +76,10 @@ export const mapEmbedSrc = (s: CompanySettings): string =>
 
 export const mapOpenLink = (s: CompanySettings): string =>
     `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s.address)}`;
+
+// Khách dán link thiếu "https://" thì tự thêm vào để bấm vào mới mở được
+export const normalizeLink = (input: string): string => {
+    const v = input.trim();
+    if (!v) return "";
+    return /^https?:\/\//i.test(v) ? v : `https://${v}`;
+};
