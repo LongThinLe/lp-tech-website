@@ -4,19 +4,22 @@ import { getBrands } from "../services/brandService";
 import type { Brand } from "../services/brandService";
 import { addProduct, getProducts, updateProduct, deleteProduct } from "../services/productService";
 import { getLeads } from "../services/leadService";
-import { uploadProductImage } from "../services/storageService";
+import { uploadProductImage, uploadCertFile } from "../services/storageService";
 import { toSlug, uniqueSlug } from "../utils/slug";
-import type { Product } from "../types";
+import type { Product, CertFile } from "../types";
 import RichTextEditor from "../components/RichTextEditor";
 import { looksLikeHtml, isEmptyRich } from "../utils/richText";
 import {
   FiTag, FiLayers, FiBriefcase, FiMessageSquare,
   FiPlus, FiEdit2, FiTrash2, FiX, FiSearch, FiChevronDown, FiCheckCircle,
-  FiUploadCloud, FiImage, FiEdit3, FiLink,
+  FiUploadCloud, FiImage, FiEdit3, FiLink, FiFileText, FiPaperclip,
 } from "react-icons/fi";
 
 // Số ảnh tối đa cho 1 sản phẩm (tính cả ảnh chính) — khách chưa chốt, đổi số này khi cần
 const MAX_IMAGES = 10;
+// Số file chứng nhận tối đa cho 1 sản phẩm, và dung lượng tối đa mỗi file (Cloudinary gói miễn phí giới hạn 10MB)
+const MAX_CERT_FILES = 10;
+const MAX_CERT_SIZE_MB = 10;
 
 export default function AdminDashboardPage() {
   // Danh mục lấy từ Firebase (admin thêm/xóa được ở trang Danh mục)
@@ -33,6 +36,9 @@ export default function AdminDashboardPage() {
   // Số ảnh đang được tải lên (để hiện vòng xoay và khóa nút Lưu)
   const [uploadingCount, setUploadingCount] = useState(0);
   const [backfilling, setBackfilling] = useState(false);
+  // Số file chứng nhận đang tải lên
+  const [certUploading, setCertUploading] = useState(0);
+  const certInputRef = useRef<HTMLInputElement>(null);
 
   // Lấy dữ liệu sản phẩm THẬT từ Firebase ngay khi trang vừa tải
   useEffect(() => {
@@ -118,6 +124,8 @@ export default function AdminDashboardPage() {
       specs: [],
       usageGuide: "",
       certification: "",
+      certFiles: [],
+      seoKeywords: "",
     });
     setSpecsText("");
     setShowForm(true);
@@ -127,6 +135,8 @@ export default function AdminDashboardPage() {
     setEditing({
       usageGuide: "",
       certification: "",
+      certFiles: [],
+      seoKeywords: "",
       ...p,
       slug: p.slug ?? "",
       images: (p.images ?? []).filter(Boolean),
@@ -176,6 +186,52 @@ export default function AdminDashboardPage() {
     setUploadingCount((c) => c - chosen.length);
   };
 
+  // Tải file chứng nhận (PDF hoặc hình): chọn nhiều file cùng lúc
+  const addCertFiles = async (fileList: FileList | File[]) => {
+    const files = Array.from(fileList).filter(
+      (f) => f.type === "application/pdf" || f.type.startsWith("image/") || /\.pdf$/i.test(f.name)
+    );
+    if (files.length === 0) {
+      setToast({ message: "Chỉ nhận file PDF hoặc hình ảnh." });
+      return;
+    }
+
+    const room = MAX_CERT_FILES - (editing?.certFiles?.length ?? 0) - certUploading;
+    if (room <= 0) {
+      setToast({ message: `Mỗi sản phẩm tối đa ${MAX_CERT_FILES} file chứng nhận.` });
+      return;
+    }
+
+    const tooBig = files.filter((f) => f.size > MAX_CERT_SIZE_MB * 1024 * 1024);
+    const valid = files.filter((f) => f.size <= MAX_CERT_SIZE_MB * 1024 * 1024).slice(0, room);
+    if (tooBig.length > 0) {
+      setToast({ message: `Có ${tooBig.length} file quá ${MAX_CERT_SIZE_MB}MB nên không tải lên được.` });
+    }
+    if (valid.length === 0) return;
+
+    setCertUploading((c) => c + valid.length);
+    const results = await Promise.all(
+      valid.map((f) =>
+        uploadCertFile(f).catch((err) => {
+          console.error("Lỗi tải file chứng nhận:", err);
+          return null;
+        })
+      )
+    );
+    const ok = results.filter((r): r is CertFile => !!r);
+    if (ok.length < valid.length) {
+      setToast({ message: `Có ${valid.length - ok.length} file tải lên thất bại — thử lại nhé.` });
+    }
+    setEditing((prev) => (prev ? { ...prev, certFiles: [...(prev.certFiles ?? []), ...ok] } : prev));
+    setCertUploading((c) => c - valid.length);
+  };
+
+  const removeCertFile = (index: number) => {
+    setEditing((prev) =>
+      prev ? { ...prev, certFiles: (prev.certFiles ?? []).filter((_, i) => i !== index) } : prev
+    );
+  };
+
   const removeImage = (index: number) => {
     setAllImages(allImages.filter((_, i) => i !== index));
   };
@@ -207,6 +263,8 @@ export default function AdminDashboardPage() {
           : specsText.split("\n").map((s) => s.trim()).filter(Boolean),
       usageGuide: isEmptyRich(editing.usageGuide ?? "") ? "" : editing.usageGuide,
       certification: isEmptyRich(editing.certification ?? "") ? "" : editing.certification,
+      certFiles: editing.certFiles ?? [],
+      seoKeywords: (editing.seoKeywords ?? "").trim(),
     };
 
     const isNew = !items.some((p) => p.id === finalEditing.id);
@@ -768,6 +826,95 @@ export default function AdminDashboardPage() {
                       onChange={(html) => setEditing((prev) => (prev ? { ...prev, certification: html } : prev))}
                       minHeight={100}
                     />
+
+                    {/* File chứng nhận: PDF hoặc hình (COA, CQ...) */}
+                    <input
+                      ref={certInputRef}
+                      type="file"
+                      accept="application/pdf,image/*"
+                      multiple
+                      className="d-none"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files.length > 0) addCertFiles(e.target.files);
+                        e.target.value = "";
+                      }}
+                    />
+                    <div className="mt-2">
+                      {(editing.certFiles ?? []).map((f, i) => (
+                        <div
+                          key={`${f.url}-${i}`}
+                          className="d-flex align-items-center gap-2 rounded-3 mb-2"
+                          style={{ border: "1px solid #E1E9E3", padding: "8px 10px", background: "#F7FAF8", fontSize: ".82rem" }}
+                        >
+                          {f.type === "image" ? (
+                            <img src={f.url} alt={f.name} style={{ width: 34, height: 34, borderRadius: 6, objectFit: "cover" }} />
+                          ) : (
+                            <span
+                              className="d-flex align-items-center justify-content-center flex-shrink-0"
+                              style={{ width: 34, height: 34, borderRadius: 6, background: "#FDEDEC", color: "#E1483D" }}
+                            >
+                              <FiFileText size={16} />
+                            </span>
+                          )}
+                          <span className="flex-grow-1" style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {f.name}
+                          </span>
+                          <a href={f.url} target="_blank" rel="noreferrer" style={{ color: "#2F8F76", fontWeight: 600, textDecoration: "none" }}>
+                            Xem
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() => removeCertFile(i)}
+                            aria-label="Xóa file"
+                            className="border-0 bg-transparent d-flex"
+                            style={{ color: "#B93A31", cursor: "pointer" }}
+                          >
+                            <FiX size={15} />
+                          </button>
+                        </div>
+                      ))}
+                      {Array.from({ length: certUploading }).map((_, i) => (
+                        <div
+                          key={`cert-up-${i}`}
+                          className="d-flex align-items-center gap-2 rounded-3 mb-2"
+                          style={{ border: "1px dashed #B8CFC3", padding: "10px", fontSize: ".82rem", color: "#96A0A8" }}
+                        >
+                          <div className="spinner-border spinner-border-sm" style={{ color: "#2F8F76" }} role="status" />
+                          Đang tải file lên...
+                        </div>
+                      ))}
+                      {(editing.certFiles?.length ?? 0) + certUploading < MAX_CERT_FILES && (
+                        <button
+                          type="button"
+                          onClick={() => certInputRef.current?.click()}
+                          className="btn btn-sm d-inline-flex align-items-center gap-2"
+                          style={{ background: "#E4F1EA", color: "#22684F", fontWeight: 600, borderRadius: 10 }}
+                        >
+                          <FiPaperclip size={14} /> Tải file chứng nhận (PDF hoặc hình)
+                        </button>
+                      )}
+                      <div className="mt-1" style={{ fontSize: ".7rem", color: "#96A0A8" }}>
+                        Nhận file PDF hoặc hình, tối đa {MAX_CERT_FILES} file, mỗi file không quá {MAX_CERT_SIZE_MB}MB. Khách sẽ thấy các file này ở tab "Chứng nhận chất lượng".
+                      </div>
+                    </div>
+
+                    <div
+                      className="mt-4 mb-2"
+                      style={{ fontSize: ".72rem", fontWeight: 700, color: "#22684F", textTransform: "uppercase", letterSpacing: ".02em" }}
+                    >
+                      SEO
+                    </div>
+                    <label className="form-label" style={labelStyle}>Từ khóa SEO (không bắt buộc)</label>
+                    <input
+                      className="form-control mb-1"
+                      style={{ borderColor: "#E1E9E3", borderRadius: 10, fontSize: ".85rem" }}
+                      placeholder="VD: máy khoan; máy khoan điện; máy khoan Makita"
+                      value={editing.seoKeywords ?? ""}
+                      onChange={(e) => setEditing({ ...editing, seoKeywords: e.target.value })}
+                    />
+                    <div style={{ fontSize: ".7rem", color: "#96A0A8" }}>
+                      Các từ khóa cách nhau bằng dấu chấm phẩy (;). Từ khóa được đưa vào tiêu đề và mô tả trang sản phẩm để Google dễ hiểu trang hơn.
+                    </div>
                   </div>
                 </div>
               </div>
@@ -788,16 +935,16 @@ export default function AdminDashboardPage() {
             </button>
             <button
               onClick={save}
-              disabled={uploadingCount > 0}
+              disabled={uploadingCount > 0 || certUploading > 0}
               className="btn"
               style={{
                 background: "linear-gradient(135deg, #2F8F76, #22684F)", color: "#fff", fontWeight: 700,
                 fontSize: ".9rem", padding: "11px 36px", border: "none", borderRadius: 11,
                 boxShadow: "0 6px 16px rgba(47,143,118,.3)",
-                opacity: uploadingCount > 0 ? .6 : 1,
+                opacity: uploadingCount > 0 || certUploading > 0 ? .6 : 1,
               }}
             >
-              {uploadingCount > 0 ? "Đang tải ảnh lên..." : "Lưu sản phẩm"}
+              {uploadingCount > 0 || certUploading > 0 ? "Đang tải file lên..." : "Lưu sản phẩm"}
             </button>
           </div>
         </div>

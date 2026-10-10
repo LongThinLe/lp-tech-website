@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, Navigate } from "react-router-dom";
-import { FiCheck, FiPhone, FiShare2, FiCheckCircle, FiShield, FiChevronLeft, FiChevronRight, FiChevronDown } from "react-icons/fi";
+import { FiCheck, FiPhone, FiShare2, FiCheckCircle, FiShield, FiChevronLeft, FiChevronRight, FiChevronDown, FiFileText, FiExternalLink } from "react-icons/fi";
 import { getBrands } from "../services/brandService";
 import type { Brand } from "../services/brandService";
 import { getProducts } from "../services/productService";
@@ -44,6 +44,50 @@ export default function ProductDetailPage() {
     setRelatedCount(RELATED_PREVIEW);
   }, [id]);
 
+  // SEO: đặt tiêu đề trang, mô tả và từ khóa theo sản phẩm đang xem (đặt TRƯỚC các return sớm)
+  useEffect(() => {
+    const cur = products.find((prod) => prod.slug === id) ?? products.find((prod) => prod.id === id);
+    if (!cur) return;
+    const brandName = brands.find((b) => b.id === cur.brandId)?.name;
+    const keywords = (cur.seoKeywords ?? "")
+      .split(/[;\n]/)
+      .map((k) => k.trim())
+      .filter(Boolean);
+
+    const prevTitle = document.title;
+    document.title = `${cur.name}${brandName ? ` - ${brandName}` : ""} | LP Tech`;
+
+    const setMeta = (name: string, content: string) => {
+      let el = document.head.querySelector<HTMLMetaElement>(`meta[name="${name}"]`);
+      const created = !el;
+      const old = el?.getAttribute("content") ?? null;
+      if (!el) {
+        el = document.createElement("meta");
+        el.setAttribute("name", name);
+        document.head.appendChild(el);
+      }
+      el.setAttribute("content", content);
+      return () => {
+        if (!el) return;
+        if (created) el.remove();
+        else if (old !== null) el.setAttribute("content", old);
+      };
+    };
+
+    const description =
+      `${cur.name}${brandName ? ` (${brandName})` : ""}` +
+      (keywords.length ? ` — ${keywords.slice(0, 5).join(", ")}.` : ".") +
+      " Liên hệ LP Tech để nhận báo giá.";
+    const undoDesc = setMeta("description", description);
+    const undoKw = keywords.length ? setMeta("keywords", keywords.join(", ")) : () => {};
+
+    return () => {
+      document.title = prevTitle;
+      undoDesc();
+      undoKw();
+    };
+  }, [products, brands, id]);
+
   if (loading) {
     return (
       <section className="py-5 bg-white text-center" style={{ minHeight: "70vh", color: "#96A0A8" }}>
@@ -77,9 +121,14 @@ export default function ProductDetailPage() {
   const usageText = p.usageGuide?.trim()
     ? p.usageGuide
     : "Liên hệ đội ngũ kỹ thuật LP Tech để được hướng dẫn cụ thể theo điều kiện sử dụng thực tế của bạn.";
-  const certText = p.certification?.trim()
-    ? p.certification
-    : "Liên hệ để nhận đầy đủ chứng từ CO/CQ kèm theo lô hàng khi đặt mua.";
+  const certFiles = p.certFiles ?? [];
+  const hasCertText = !!p.certification?.trim();
+  // Có file đính kèm mà chưa có chữ thì không hiện câu mặc định
+  const certText = hasCertText
+    ? (p.certification as string)
+    : certFiles.length > 0
+      ? ""
+      : "Liên hệ để nhận đầy đủ chứng từ CO/CQ kèm theo lô hàng khi đặt mua.";
 
   return (
     <section className="py-5 bg-white" style={{ minHeight: "70vh" }}>
@@ -276,7 +325,44 @@ export default function ProductDetailPage() {
                 },
                 {
                   label: "Chứng nhận chất lượng",
-                  content: <RichContent text={certText} />,
+                  content: (
+                    <>
+                      {certText && <RichContent text={certText} />}
+                      {certFiles.length > 0 && (
+                        <div className={certText ? "mt-3" : ""}>
+                          <div className="d-flex flex-column gap-2">
+                            {certFiles.map((f, i) => (
+                              <a
+                                key={`${f.url}-${i}`}
+                                href={f.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="d-flex align-items-center gap-2 text-decoration-none rounded-3 p-2"
+                                style={{ border: "1px solid #E1E9E3", color: "#223028", fontSize: ".88rem" }}
+                              >
+                                {f.type === "image" ? (
+                                  <img
+                                    src={f.url}
+                                    alt={f.name}
+                                    style={{ width: 44, height: 44, objectFit: "cover", borderRadius: 8, flexShrink: 0 }}
+                                  />
+                                ) : (
+                                  <span
+                                    className="d-flex align-items-center justify-content-center flex-shrink-0"
+                                    style={{ width: 44, height: 44, borderRadius: 8, background: "rgba(47,143,118,.1)", color: "#22684F" }}
+                                  >
+                                    <FiFileText size={20} />
+                                  </span>
+                                )}
+                                <span className="flex-grow-1" style={{ wordBreak: "break-word" }}>{f.name}</span>
+                                <FiExternalLink size={15} style={{ color: "#2F8F76" }} className="flex-shrink-0" />
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  ),
                 },
               ]}
             />
