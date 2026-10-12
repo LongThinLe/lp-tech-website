@@ -1,10 +1,29 @@
-import { useState, useRef, useLayoutEffect } from "react";
+import { useState, useRef, useLayoutEffect, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { FiPhone, FiClock, FiMail, FiX, FiChevronRight } from "react-icons/fi";
 import { PiMagnifyingGlassBold } from "react-icons/pi";
 import { useCategoryGroups } from "../services/categoryService";
 import { useCompanySettings } from "../hooks/useCompanySettings";
+import { getNews, formatNewsDate } from "../services/newsService";
+import type { NewsPost } from "../services/newsService";
+
+// Số bài tin tức mới nhất hiện trong menu thả xuống
+const NEWS_MENU_COUNT = 6;
+
+// Tải tin tức một lần cho cả phiên, các lần mở menu sau dùng lại — không tốn thêm lượt đọc Firebase
+let newsPromise: Promise<NewsPost[]> | null = null;
+const loadMenuNews = (): Promise<NewsPost[]> => {
+  if (!newsPromise) {
+    newsPromise = getNews()
+      .then((list) => list.filter((p) => !p.hidden).slice(0, NEWS_MENU_COUNT))
+      .catch(() => {
+        newsPromise = null;
+        return [];
+      });
+  }
+  return newsPromise;
+};
 
 export default function Header() {
   const categoryGroups = useCategoryGroups();
@@ -12,6 +31,8 @@ export default function Header() {
   const [query, setQuery] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [hoveredCat, setHoveredCat] = useState<string | null>(null);
+  const [newsOpen, setNewsOpen] = useState(false);
+  const [menuNews, setMenuNews] = useState<NewsPost[]>([]);
   const navigate = useNavigate();
   const company = useCompanySettings();
   const phoneDigits = company.phone.replace(/\D/g, "");
@@ -22,6 +43,16 @@ export default function Header() {
     navigate(`/san-pham?q=${encodeURIComponent(query.trim())}`);
     setSearchOpen(false);
   };
+
+  useEffect(() => {
+    let alive = true;
+    loadMenuNews().then((list) => {
+      if (alive) setMenuNews(list);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const closeMenu = () => {
     setMenuOpen(false);
@@ -61,6 +92,7 @@ export default function Header() {
           .brand-logo { height: 40px; }
           .brand-name { font-size: .62rem; letter-spacing: .4px; padding-left: 7px; border-left-width: 2px; }
         }
+        .news-menu-item:hover { background: #E4F1EA; }
         @media (max-width: 359.98px) {
           .brand-name { font-size: .55rem; }
         }
@@ -185,11 +217,55 @@ export default function Header() {
                   Dịch vụ
                 </Link>
               </li>
-              <li className="nav-item">
-                <Link to="/tin-tuc" className="nav-link px-3 position-relative">
+              <li
+                className="nav-item position-relative"
+                onMouseEnter={() => setNewsOpen(true)}
+                onMouseLeave={() => setNewsOpen(false)}
+              >
+                <Link
+                  to="/tin-tuc"
+                  className="nav-link px-3 position-relative"
+                  style={{ color: newsOpen ? "#2F8F76" : undefined }}
+                >
                   Tin tức
                   <span className="position-absolute" style={{ top: 0, right: -6, background: "#E1483D", color: "#fff", fontSize: ".55rem", fontWeight: 700, padding: "1px 5px", borderRadius: 20 }}>MỚI</span>
                 </Link>
+
+                {newsOpen && menuNews.length > 0 && (
+                  <div
+                    className="position-absolute d-none d-lg-block bg-white rounded-3 p-2"
+                    style={{ top: "100%", left: 0, zIndex: 1000, width: 320, border: "1px solid #E1E9E3", boxShadow: "0 16px 40px rgba(0,0,0,.12)" }}
+                  >
+                    {menuNews.map((post) => (
+                      <Link
+                        key={post.id}
+                        to={`/tin-tuc/${post.slug || post.id}`}
+                        onClick={() => setNewsOpen(false)}
+                        className="d-block px-3 py-2 rounded-2 text-decoration-none news-menu-item"
+                        style={{ color: "#223028" }}
+                      >
+                        <span
+                          style={{
+                            display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
+                            overflow: "hidden", fontSize: ".88rem", lineHeight: 1.35,
+                          }}
+                        >
+                          {post.title}
+                        </span>
+                        <span style={{ fontSize: ".72rem", color: "#96A0A8" }}>{formatNewsDate(post.publishedAt)}</span>
+                      </Link>
+                    ))}
+                    <div style={{ height: 1, background: "#E1E9E3", margin: "6px 8px" }} />
+                    <Link
+                      to="/tin-tuc"
+                      onClick={() => setNewsOpen(false)}
+                      className="d-block px-3 py-2 rounded-2 text-decoration-none fw-semibold"
+                      style={{ fontSize: ".88rem", color: "#2F8F76" }}
+                    >
+                      Xem tất cả tin tức
+                    </Link>
+                  </div>
+                )}
               </li>
               <li className="nav-item">
                 <Link to="/lien-he" className="nav-link px-3">Liên hệ</Link>

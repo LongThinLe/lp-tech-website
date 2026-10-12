@@ -1,0 +1,14 @@
+{
+  // Tên Worker — PHẢI giống tên Worker đang chạy trên Cloudflare (lp-tech-website)
+  "name": "lp-tech-website",
+  "main": "worker/index.js",
+  "compatibility_date": "2025-09-01",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    // Web React: đường dẫn lạ vẫn trả về index.html (giống trước đây)
+    "not_found_handling": "single-page-application",
+    // Chỉ những đường dẫn này đi qua Worker (để gắn thẻ xem trước khi chia sẻ link); còn lại phục vụ thẳng
+    "run_worker_first": ["/", "/tin-tuc/*", "/san-pham/*"]
+  }
+}
