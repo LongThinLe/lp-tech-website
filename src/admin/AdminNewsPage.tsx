@@ -80,6 +80,7 @@ export default function AdminNewsPage() {
       blocks: [{ id: uid(), type: "text", text: "" }],
       publishedAt: today(),
       hidden: false,
+      seoKeywords: "",
     });
   };
 
@@ -169,6 +170,7 @@ export default function AdminNewsPage() {
         blocks,
         publishedAt: editing.publishedAt || today(),
         hidden: !!editing.hidden,
+        seoKeywords: (editing.seoKeywords ?? "").trim(),
       };
       if (isNew) await addNews(data);
       else await updateNews(editing.id, data);
@@ -276,6 +278,17 @@ export default function AdminNewsPage() {
             onChange={(e) => patch({ summary: e.target.value })}
             placeholder="Vài câu giới thiệu ngắn về bài viết"
           />
+
+          <label style={label}>Từ khóa SEO (không bắt buộc)</label>
+          <input
+            style={input}
+            value={editing.seoKeywords ?? ""}
+            onChange={(e) => patch({ seoKeywords: e.target.value })}
+            placeholder="VD: vật tư phòng thí nghiệm; hóa chất; thiết bị đo"
+          />
+          <div style={{ fontSize: 12, color: "#96A0A8", marginTop: 4 }}>
+            Các từ khóa cách nhau bằng dấu chấm phẩy (;). Khách không thấy dòng này — nó giúp Google hiểu bài viết nói về gì.
+          </div>
 
           <label style={label}>Ảnh bìa</label>
           <div style={{ display: "flex", gap: 12, alignItems: "center" }}>

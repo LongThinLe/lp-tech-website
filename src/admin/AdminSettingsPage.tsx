@@ -110,6 +110,9 @@ export default function AdminSettingsPage() {
         instagram: normalizeLink(form.instagram),
         tiktok: normalizeLink(form.tiktok),
         shopee: normalizeLink(form.shopee),
+        seoTitle: form.seoTitle.trim(),
+        seoDescription: form.seoDescription.trim(),
+        seoKeywords: form.seoKeywords.trim(),
       };
       await saveCompanySettings(data);
       setForm(data);
@@ -251,6 +254,42 @@ export default function AdminSettingsPage() {
         >
           Mở địa chỉ này trong Google Maps
         </a>
+      </div>
+
+      <div className="bg-white rounded-4 p-4 mb-4" style={{ boxShadow: "0 4px 16px rgba(34,48,40,.06)" }}>
+        <div className="fw-semibold mb-1" style={{ fontSize: ".95rem" }}>SEO trang chủ</div>
+        <div style={{ fontSize: ".78rem", color: "#5B6B76", marginBottom: 12 }}>
+          Giúp Google hiểu trang chủ nói về gì. Để trống thì web giữ tiêu đề mặc định.
+          Lưu ý: SEO không đảm bảo thứ hạng — Google tự quyết định thứ hạng.
+        </div>
+        <label className="form-label" style={{ fontSize: ".78rem", fontWeight: 600, color: "#3D4A44" }}>Tiêu đề trang chủ</label>
+        <input
+          className="form-control mb-3"
+          style={{ borderColor: "#E1E9E3", borderRadius: 10, fontSize: ".9rem" }}
+          placeholder="VD: LP Tech — Vật tư đóng gói, phòng thí nghiệm, thiết bị đo"
+          value={form.seoTitle}
+          onChange={(e) => update("seoTitle", e.target.value)}
+        />
+        <label className="form-label" style={{ fontSize: ".78rem", fontWeight: 600, color: "#3D4A44" }}>Mô tả ngắn</label>
+        <textarea
+          className="form-control mb-1"
+          style={{ borderColor: "#E1E9E3", borderRadius: 10, fontSize: ".9rem", minHeight: 70 }}
+          placeholder="1–2 câu giới thiệu công ty, nên dưới 160 ký tự"
+          value={form.seoDescription}
+          onChange={(e) => update("seoDescription", e.target.value)}
+        />
+        <div style={{ fontSize: ".72rem", color: form.seoDescription.length > 160 ? "#B93A31" : "#96A0A8", marginBottom: 12 }}>
+          {form.seoDescription.length}/160 ký tự
+        </div>
+        <label className="form-label" style={{ fontSize: ".78rem", fontWeight: 600, color: "#3D4A44" }}>Từ khóa</label>
+        <input
+          className="form-control"
+          style={{ borderColor: "#E1E9E3", borderRadius: 10, fontSize: ".9rem" }}
+          placeholder="VD: vật tư đóng gói; vật tư phòng thí nghiệm; thiết bị đo"
+          value={form.seoKeywords}
+          onChange={(e) => update("seoKeywords", e.target.value)}
+        />
+        <div style={{ fontSize: ".72rem", color: "#96A0A8", marginTop: 4 }}>Các từ khóa cách nhau bằng dấu chấm phẩy (;).</div>
       </div>
 
       {message && (

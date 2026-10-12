@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { getNews, formatNewsDate, type NewsPost } from "../services/newsService";
+import { getNews, formatNewsDate, newsExcerpt, type NewsPost } from "../services/newsService";
+import { applySeo } from "../utils/seo";
 import RichContent from "../components/RichContent";
 
 export default function NewsDetailPage() {
@@ -17,6 +18,17 @@ export default function NewsDetailPage() {
 
   const post = posts.find((p) => p.slug === slug) || posts.find((p) => p.id === slug);
   const others = posts.filter((p) => p !== post).slice(0, 3);
+
+  // SEO: tiêu đề, mô tả và từ khóa riêng cho từng bài (đặt TRƯỚC các return sớm)
+  useEffect(() => {
+    const cur = posts.find((p) => p.slug === slug) || posts.find((p) => p.id === slug);
+    if (!cur) return;
+    return applySeo({
+      title: `${cur.title} | LP Tech`,
+      description: newsExcerpt(cur),
+      keywords: cur.seoKeywords,
+    });
+  }, [posts, slug]);
 
   if (loading) {
     return (

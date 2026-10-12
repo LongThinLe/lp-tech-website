@@ -22,6 +22,7 @@ export interface NewsPost {
   blocks: NewsBlock[];
   publishedAt: string; // YYYY-MM-DD
   hidden?: boolean;
+  seoKeywords?: string; // từ khóa SEO, cách nhau bằng dấu ;
 }
 
 const COL = "news";

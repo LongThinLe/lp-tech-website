@@ -11,6 +11,9 @@ export interface CompanySettings {
     instagram: string;
     tiktok: string; // link TikTok (để trống = ẩn)
     shopee: string; // link gian hàng Shopee (để trống = ẩn)
+    seoTitle: string; // tiêu đề trang chủ trên Google (để trống = giữ mặc định)
+    seoDescription: string; // mô tả trang chủ trên Google
+    seoKeywords: string; // từ khóa chung, cách nhau bằng dấu ;
     supportLine: string; // dòng giới thiệu người tư vấn ở chân trang
     mapEmbed: string; // link nhúng Google Map (để trống = tự tìm theo địa chỉ)
     workingHours: string; // giờ làm việc ở thanh trên cùng
@@ -29,6 +32,9 @@ export const defaultSettings: CompanySettings = {
     instagram: "",
     tiktok: "",
     shopee: "",
+    seoTitle: "",
+    seoDescription: "",
+    seoKeywords: "",
     supportLine: "Ms. Khánh Linh — Phụ trách kinh doanh · phản hồi trong 15 phút",
     mapEmbed: "",
     workingHours: "Thứ 2 – 7: 07:00–11:30 & 13:00–16:30",
