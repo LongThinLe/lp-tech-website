@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { FiChevronDown } from "react-icons/fi";
 import { useCategoryGroups } from "../services/categoryService";
 import { getBrands } from "../services/brandService";
 import type { Brand } from "../services/brandService";
@@ -7,6 +8,10 @@ import { getProducts } from "../services/productService";
 import type { Product } from "../types";
 
 const thumbTones = ["#CDE4D8", "#DCEBE2", "#E4F1EA", "#EEF4F0"];
+
+// Số sản phẩm hiện sẵn, và số mở thêm mỗi lần bấm "Xem thêm" (chia hết cho 3 và 2 để lưới luôn tròn hàng)
+const PAGE_SIZE = 12;
+const PAGE_STEP = 12;
 
 export default function ProductsPage() {
   const categoryGroups = useCategoryGroups();
@@ -18,6 +23,8 @@ export default function ProductsPage() {
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const gridTopRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     getProducts()
@@ -32,6 +39,11 @@ export default function ProductsPage() {
       .then((data) => setBrands(data))
       .catch((err) => console.error("Lỗi tải hãng phân phối từ Firebase:", err));
   }, []);
+
+  // Đổi danh mục / hãng / từ khóa tìm kiếm thì quay về số sản phẩm ban đầu
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [activeCat, activeGroup, activeBrand, query]);
 
   const activeGroupObj = activeGroup ? categoryGroups.find((g) => g.id === activeGroup) : undefined;
 
@@ -75,8 +87,28 @@ export default function ProductsPage() {
 
   const noFilter = !activeCat && !activeGroupObj;
 
+  const visibleProducts = filtered.slice(0, visibleCount);
+  const hiddenCount = Math.max(0, filtered.length - visibleCount);
+  const expanded = visibleCount > PAGE_SIZE;
+
+  const collapse = () => {
+    setVisibleCount(PAGE_SIZE);
+    gridTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   return (
     <section className="py-5 bg-white" style={{ minHeight: "70vh" }}>
+      <style>{`
+        @keyframes prodFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+        .prod-more-btn {
+          display: inline-flex; align-items: center; gap: 8px;
+          padding: 10px 24px; border-radius: 999px;
+          border: 1.5px solid #2F8F76; background: #fff; color: #22684F;
+          font-weight: 600; font-size: .9rem; cursor: pointer;
+          transition: background .2s ease, color .2s ease, box-shadow .2s ease;
+        }
+        .prod-more-btn:hover { background: #2F8F76; color: #fff; box-shadow: 0 8px 20px rgba(47,143,118,.25); }
+      `}</style>
       <div className="container">
         <div style={{ fontSize: ".82rem", color: "#96A0A8" }} className="mb-3" data-aos="fade-up">
           <Link to="/" style={{ color: "inherit", textDecoration: "none" }}>Trang chủ</Link> / <span style={{ color: "#223028" }}>Sản phẩm</span>
@@ -202,7 +234,7 @@ export default function ProductsPage() {
             </div>
           </div>
 
-          <div className="col-lg-9">
+          <div className="col-lg-9" ref={gridTopRef} style={{ scrollMarginTop: 120 }}>
             {loading ? (
               <div className="text-center py-5" style={{ color: "#96A0A8" }}>Đang tải sản phẩm...</div>
             ) : filtered.length === 0 ? (
@@ -212,11 +244,18 @@ export default function ProductsPage() {
                   : "Chưa có sản phẩm nào trong danh mục này."}
               </div>
             ) : (
+              <>
               <div className="row g-4">
-                {filtered.map((p, idx) => {
+                {visibleProducts.map((p, idx) => {
                   const brand = brands.find((b) => b.id === p.brandId);
+                  const isExtra = idx >= PAGE_SIZE;
                   return (
-                    <div className="col-6 col-md-4" key={p.id} data-aos="fade-up" data-aos-delay={(idx % 4) * 80}>
+                    <div
+                      className="col-6 col-md-4"
+                      key={p.id}
+                      style={isExtra ? { animation: `prodFadeIn .45s ease ${(idx % PAGE_STEP) * 40}ms both` } : undefined}
+                      {...(!isExtra ? { "data-aos": "fade-up", "data-aos-delay": (idx % 4) * 80 } : {})}
+                    >
                       <Link
                         to={`/san-pham/${p.slug || p.id}`}
                         className="bg-white rounded-4 p-3 h-100 product-card d-block text-decoration-none"
@@ -257,6 +296,22 @@ export default function ProductsPage() {
                   );
                 })}
               </div>
+
+              {(hiddenCount > 0 || expanded) && (
+                <div className="text-center mt-5 d-flex justify-content-center gap-3 flex-wrap">
+                  {hiddenCount > 0 && (
+                    <button type="button" className="prod-more-btn" onClick={() => setVisibleCount((n) => n + PAGE_STEP)}>
+                      Xem thêm {Math.min(PAGE_STEP, hiddenCount)} sản phẩm <FiChevronDown />
+                    </button>
+                  )}
+                  {expanded && (
+                    <button type="button" className="prod-more-btn" onClick={collapse}>
+                      Thu gọn
+                    </button>
+                  )}
+                </div>
+              )}
+              </>
             )}
           </div>
         </div>
