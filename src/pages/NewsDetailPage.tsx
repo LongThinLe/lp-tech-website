@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getNews, formatNewsDate, type NewsPost } from "../services/newsService";
+import RichContent from "../components/RichContent";
 
 export default function NewsDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -67,18 +68,17 @@ export default function NewsDetailPage() {
 
         {post.blocks.map((b) =>
           b.type === "text" ? (
-            <p
+            <div
               key={b.id}
               style={{
-                whiteSpace: "pre-line",
                 lineHeight: 1.75,
                 fontSize: 16,
                 color: "#223028",
                 marginBottom: 18,
               }}
             >
-              {b.text}
-            </p>
+              <RichContent text={b.text} />
+            </div>
           ) : (
             <img
               key={b.id}

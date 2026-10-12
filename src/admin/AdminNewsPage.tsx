@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { useEffect, useState } from "react";
 import { FiPlus, FiEdit2, FiTrash2, FiArrowUp, FiArrowDown, FiImage, FiType } from "react-icons/fi";
 import {
@@ -11,18 +12,20 @@ import {
 } from "../services/newsService";
 import { uploadProductImage } from "../services/storageService";
 import { toSlug, uniqueSlug } from "../utils/slug";
+import RichTextEditor from "../components/RichTextEditor";
+import { isEmptyRich } from "../utils/richText";
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 const today = () => new Date().toISOString().slice(0, 10);
 
-const label: React.CSSProperties = {
+const label: CSSProperties = {
   fontSize: 13,
   fontWeight: 600,
   color: "#5B6B76",
   margin: "14px 0 6px",
   display: "block",
 };
-const input: React.CSSProperties = {
+const input: CSSProperties = {
   width: "100%",
   border: "1px solid #E1E9E3",
   borderRadius: 8,
@@ -30,7 +33,7 @@ const input: React.CSSProperties = {
   fontSize: 14,
   background: "#fff",
 };
-const btnGreen: React.CSSProperties = {
+const btnGreen: CSSProperties = {
   background: "#2F8F76",
   color: "#fff",
   border: "none",
@@ -39,7 +42,7 @@ const btnGreen: React.CSSProperties = {
   fontSize: 14,
   fontWeight: 600,
 };
-const btnLight: React.CSSProperties = {
+const btnLight: CSSProperties = {
   background: "#fff",
   color: "#5B6B76",
   border: "1px solid #E1E9E3",
@@ -154,7 +157,7 @@ export default function AdminNewsPage() {
     setSaving(true);
     try {
       const blocks = editing.blocks.filter((b) =>
-        b.type === "text" ? b.text.trim() !== "" : true
+        b.type === "text" ? !isEmptyRich(b.text) : true
       );
       const taken = posts.filter((p) => p.id !== editing.id).map((p) => p.slug);
       const slug = editing.slug || uniqueSlug(toSlug(editing.title), taken);
@@ -345,11 +348,10 @@ export default function AdminNewsPage() {
                 </button>
               </div>
               {b.type === "text" ? (
-                <textarea
-                  style={{ ...input, minHeight: 110, lineHeight: 1.6 }}
+                <RichTextEditor
                   value={b.text}
-                  onChange={(e) => changeText(i, e.target.value)}
-                  placeholder="Gõ nội dung, nhấn Enter để xuống dòng"
+                  onChange={(html) => changeText(i, html)}
+                  minHeight={110}
                 />
               ) : (
                 <img

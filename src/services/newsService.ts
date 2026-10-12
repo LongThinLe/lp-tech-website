@@ -7,6 +7,7 @@ import {
   doc,
 } from "firebase/firestore";
 import { db } from "../firebase";
+import { looksLikeHtml } from "../utils/richText";
 
 export type NewsBlock =
   | { id: string; type: "text"; text: string }
@@ -65,8 +66,15 @@ export function newsCover(p: NewsPost): string {
   return img && img.type === "image" ? img.url : "";
 }
 
+// Đoạn văn có thể là HTML (do khung soạn thảo tạo) — đổi về chữ thuần để làm đoạn trích
+function plainText(text: string): string {
+  if (!looksLikeHtml(text)) return text;
+  const doc = new DOMParser().parseFromString(text.replace(/<\/(p|div|li)>/gi, " </$1>"), "text/html");
+  return (doc.body.textContent ?? "").replace(/\s+/g, " ").trim();
+}
+
 export function newsExcerpt(p: NewsPost): string {
   if (p.summary) return p.summary;
   const t = p.blocks.find((b) => b.type === "text");
-  return t && t.type === "text" ? t.text.slice(0, 160) : "";
+  return t && t.type === "text" ? plainText(t.text).slice(0, 160) : "";
 }
