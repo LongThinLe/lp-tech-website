@@ -1,6 +1,5 @@
 import { useState, useRef, useLayoutEffect, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { FiPhone, FiClock, FiMail, FiX, FiChevronRight } from "react-icons/fi";
 import { PiMagnifyingGlassBold } from "react-icons/pi";
 import { useCategoryGroups } from "../services/categoryService";
@@ -34,6 +33,7 @@ export default function Header() {
   const [newsOpen, setNewsOpen] = useState(false);
   const [menuNews, setMenuNews] = useState<NewsPost[]>([]);
   const navigate = useNavigate();
+  const location = useLocation();
   const company = useCompanySettings();
   const phoneDigits = company.phone.replace(/\D/g, "");
 
@@ -53,6 +53,20 @@ export default function Header() {
       alive = false;
     };
   }, []);
+
+  // Thu gọn menu trên điện thoại (cái menu mở ra khi bấm 3 gạch)
+  const collapseMobileNav = () => {
+    const nav = document.getElementById("mainNav");
+    if (nav && nav.classList.contains("show")) {
+      nav.classList.remove("show");
+      document.querySelector(".navbar-toggler")?.setAttribute("aria-expanded", "false");
+    }
+  };
+
+  // Chuyển trang (kể cả sau khi tìm kiếm) thì tự đóng menu điện thoại
+  useEffect(() => {
+    collapseMobileNav();
+  }, [location.pathname, location.search]);
 
   const closeMenu = () => {
     setMenuOpen(false);
@@ -128,11 +142,18 @@ export default function Header() {
             </span>
           </Link>
 
-          <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
+          <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false" aria-label="Mở menu">
             <span className="navbar-toggler-icon"></span>
           </button>
 
-          <div className="collapse navbar-collapse" id="mainNav">
+          <div
+            className="collapse navbar-collapse"
+            id="mainNav"
+            onClick={(e) => {
+              // Bấm vào bất kỳ đường dẫn nào trong menu thì đóng menu luôn
+              if ((e.target as HTMLElement).closest("a")) collapseMobileNav();
+            }}
+          >
             <ul className="navbar-nav ms-auto align-items-lg-center gap-lg-2">
               <li className="nav-item">
                 <Link to="/" className="nav-link px-3">Trang chủ</Link>
