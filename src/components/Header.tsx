@@ -68,6 +68,35 @@ export default function Header() {
     collapseMobileNav();
   }, [location.pathname, location.search]);
 
+  // Menu điện thoại đang mở mà khách lướt trang xuống/lên, hoặc bấm ra ngoài vùng header thì tự đóng
+  useEffect(() => {
+    let openY = window.scrollY;
+    const isOpen = () => !!document.getElementById("mainNav")?.classList.contains("show");
+
+    const onScroll = () => {
+      if (!isOpen()) {
+        openY = window.scrollY;
+        return;
+      }
+      if (Math.abs(window.scrollY - openY) > 40) collapseMobileNav();
+    };
+    const onPointerDown = (e: PointerEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest(".navbar-toggler")) {
+        openY = window.scrollY;
+        return;
+      }
+      if (isOpen() && !target.closest("header")) collapseMobileNav();
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      document.removeEventListener("pointerdown", onPointerDown);
+    };
+  }, []);
+
   // Bấm lại đúng mục đang đứng thì tải lại trang (về đầu trang và load mới)
   const reloadIfSamePage = (e: React.MouseEvent) => {
     const a = (e.target as HTMLElement).closest("a");
