@@ -68,6 +68,19 @@ export default function Header() {
     collapseMobileNav();
   }, [location.pathname, location.search]);
 
+  // Bấm lại đúng mục đang đứng thì tải lại trang (về đầu trang và load mới)
+  const reloadIfSamePage = (e: React.MouseEvent) => {
+    const a = (e.target as HTMLElement).closest("a");
+    if (!a || e.ctrlKey || e.metaKey || e.shiftKey || a.target === "_blank") return;
+    const href = a.getAttribute("href") || "";
+    if (!href.startsWith("/")) return;
+    if (href === location.pathname + location.search) {
+      e.preventDefault();
+      window.scrollTo(0, 0);
+      window.location.reload();
+    }
+  };
+
   const closeMenu = () => {
     setMenuOpen(false);
     setHoveredCat(null);
@@ -130,7 +143,7 @@ export default function Header() {
 
       <nav className="navbar navbar-expand-lg bg-white border-bottom py-3">
         <div className="container">
-          <Link to="/" className="navbar-brand d-flex align-items-center brand-wrap">
+          <Link to="/" onClickCapture={reloadIfSamePage} className="navbar-brand d-flex align-items-center brand-wrap">
             <img
               src={company.logoHeader || "/logo-icon.png"}
               alt="LP Tech"
@@ -149,6 +162,7 @@ export default function Header() {
           <div
             className="collapse navbar-collapse"
             id="mainNav"
+            onClickCapture={reloadIfSamePage}
             onClick={(e) => {
               // Bấm vào bất kỳ đường dẫn nào trong menu thì đóng menu luôn
               if ((e.target as HTMLElement).closest("a")) collapseMobileNav();
